@@ -349,6 +349,9 @@ export const findings = pgTable('findings', {
 ]);
 
 export const approvals = pgTable('approvals', {
+  decisions: jsonb('decisions').notNull().default([]),
+  confirmed_by: uuid('confirmed_by'),
+  confirmed_at: timestamp('confirmed_at', { withTimezone: true, mode: 'string' }),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   run_id: uuid('run_id').notNull(),
@@ -370,6 +373,7 @@ export const approvals = pgTable('approvals', {
   execution_summary: jsonb('execution_summary'),
   stale_reason: text('stale_reason')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
+  foreignKey({ columns: [t.workspace_id, t.confirmed_by], foreignColumns: [members.workspace_id, members.id] }),
   check('approvals_kind_check', sql`${t.kind} in ('plan_correction', 'provision', 'client_email', 'scope_change', 'reversal')`),
   check('approvals_requested_by_type_check', sql`${t.requested_by_type} in ('user', 'agent')`),
   check('approvals_status_check', sql`${t.status} in ('pending', 'approved', 'rejected', 'expired', 'stale', 'executing', 'executed', 'cancelled')`),

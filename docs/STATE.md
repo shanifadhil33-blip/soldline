@@ -34,9 +34,15 @@ P6 adds PDF parsing through unpdf on Node v22.23.3, page quotes, a deterministic
 
 System analysis uses private named owner operations. Each scope version, item, finding and plan update writes a system audit row. New migrations add page text, cadence, mapping synonyms, offsets, ClickUp list references and a contract start date. Scope versions remain draft for P7. ClickUp workload reads use shared token buckets and MSW fixtures in tests. The queue core and permissions are unchanged. P6 verification passes 361 tests across 22 files, including 28 new tests. The gate passes lint, types, tests and the production build with exit code 0. See docs/P6.md for exact findings, tasks, files and verification limits.
 
+P7 adds exact approvals with canonical SHA256 payload and input hashes, per kind role requirements, twenty four hour expiry and thirty minute expiry for irreversible work. Human requesters cannot approve their own work. Scope changes need two distinct eligible people. Irreversible decisions return the full message for a separate confirmation within two minutes. Every decision, refusal, effect plan and queued job writes audit rows.
+
+Execution locks the approval, checks the stored hashes and current approver roles, then reads every input live before any effect row or job is created. Changed HubSpot deals, line items, scope versions and ClickUp list presence make approvals stale with readable reasons and observation times. Durable webhook and poll receipts and scope changes invalidate open approvals immediately. Repeated execution returns the stored summary. Queue failures roll back all planned effects and jobs before a separate failed audit is committed.
+
+The temporary plan route now decides an actual pending approval for real workspaces and demos. Its contributor 403 proof remains intact. P7 verification passes 436 tests across 23 files, including 75 new approval tests. The gate passes lint, types, tests and the production build with exit code 0 using local font fixtures. See docs/P7.md for every rule and its test, exact live recheck lines, files and limits.
+
 ## Next
 
-P7 approvals engine. Continue using local fixtures until live service work is explicitly requested.
+P8 delivery execution. Consume exact planned effects and jobs, recheck each write, send approved client email through the team inbox provider using createDraft then sendDraft, and record completion and compensation results. Continue using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -64,7 +70,9 @@ Contributor scope suggestions and client scope requests use an explicit intent a
 
 ## Parked
 
-P6 leaves automatic signed file retrieval parked with the existing unverified HubSpot file URL contract. The named scope ingestion operation accepts the PDF bytes and stores numbered page text. Analysis consumes the local HubSpot line item mirror and supplied onboarding records. The earlier sandbox seed retains its placeholder data and was outside this phase. A full run detail screen and elapsed demo UI timing remain unverified. Contract start dates and mapping ClickUp list ids need explicit configuration. AI adapters require named compatible endpoint settings and have only been exercised with MSW. P7 owns acceptance of draft scope versions and real approval writes.
+P7 leaves actual effect execution, scope acceptance writes, cancellation, undo and the final executed summary to P8. The existing worker does not claim execute_approval_effect jobs. ClickUp events without a list id conservatively mark open list approvals stale across the workspace. Every caller must supply all input references on which the exact payload depends. Production concurrency and provider conditional write contracts remain unverified. Data can change after the live read, so P8 must recheck each real write. No integration or scope engine code was changed.
+
+P6 leaves automatic signed file retrieval parked with the existing unverified HubSpot file URL contract. The named scope ingestion operation accepts the PDF bytes and stores numbered page text. Analysis consumes the local HubSpot line item mirror and supplied onboarding records. The earlier sandbox seed retains its placeholder data and was outside this phase. A full run detail screen and elapsed demo UI timing remain unverified. Contract start dates and mapping ClickUp list ids need explicit configuration. AI adapters require named compatible endpoint settings and have only been exercised with MSW. P7 now owns real approval writes. P8 will carry out approved scope acceptance effects.
 
 P5 needs deployment settings before external scheduling: TICK_URL and TICK_SECRET in GitHub secrets, TICK_SECRET on the app, and CRON_SECRET for the daily Vercel bearer. HUBSPOT_APP_CLIENT_SECRET must match the webhook app. Each HubSpot connection needs won_stage_id and should name delivery_lead_id. These were not configured remotely. The requested unit tests skill is absent, so P5 used the existing Vitest, MSW and PGlite setup directly.
 
@@ -98,7 +106,7 @@ HubSpot approval checks read the current modified time and the approved values b
 
 Contributors see runs linked to findings or recovery_items they own until tasks exist. Replace this approximation when task ownership is available.
 
-The cleanup worker, real approvals, delivery features, language switching and deployment belong to later phases. P7 must replace the audit only demo approval proof. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
+The cleanup worker, delivery execution, language switching and deployment belong to later phases. P7 replaced the audit only demo approval proof with a real approval decision. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
 
 ## Services
 
