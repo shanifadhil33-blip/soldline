@@ -13,6 +13,6 @@ export default async function Home() {
       <aside className="handover" aria-label={m.landing.preview}><p>{m.landing.promise}</p><ol>{[m.landing.scope, m.landing.check, m.landing.approve, m.landing.deliver].map((label, i) => <li key={label}><span className="step-number">{formatNumber(i + 1, locale)}</span><span>{label}</span></li>)}</ol></aside>
     </section>
     <section className="landing-sections">{m.landing.sections.map((title, i) => <article key={title}><span className="section-number">{formatNumber(i + 1, locale)}</span><h2>{title}</h2><p>{m.landing.details[i]}</p></article>)}</section>
-    <footer className="public-footer"><p>{m.landing.footer}</p><p className="stack-line">{m.landing.stack}</p></footer>
+    <footer className="public-footer"><p>{m.landing.footer}</p><p className="stack-line">{m.landing.stack}</p><p className="legal-links"><Link href="/privacy">{m.legal.privacyLink}</Link><Link href="/terms">{m.legal.termsLink}</Link></p></footer>
   </main>;
 }

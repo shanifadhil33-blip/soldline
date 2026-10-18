@@ -366,5 +366,63 @@
       "failed": "Failed"
     },
     "agent": "Agent"
+  },
+  "legal": {
+    "privacyLink": "Privacy",
+    "termsLink": "Terms",
+    "updated": "Last updated 19 October 2026",
+    "back": "Back to home",
+    "privacy": {
+      "title": "Privacy",
+      "intro": "Soldline is a portfolio demo built by Adhil Shanif. This page says what the app keeps and how to have it removed.",
+      "sections": [
+        {
+          "heading": "What we store when you sign in",
+          "body": "When you sign in with Google we keep your name, your email address and your profile picture, plus the workspace you create. We use them only to show who you are inside Soldline."
+        },
+        {
+          "heading": "Sample data only",
+          "body": "Demo workspaces use made up companies, people and deals, and every screen labels them as sample data. Demo workspaces are deleted automatically after 6 hours. The connected HubSpot and ClickUp test accounts hold sample records only."
+        },
+        {
+          "heading": "No real email is sent",
+          "body": "Soldline never sends real email. Emails inside the app are labelled sample emails marked Sample, not sent."
+        },
+        {
+          "heading": "Who helps us run the app",
+          "body": "We use Google sign in, Vercel hosting and a Neon database to run Soldline. We do not sell your data or share it with anyone else."
+        },
+        {
+          "heading": "How to ask for deletion",
+          "body": "Email shanifadhil022@gmail.com from the address you signed in with and ask us to delete your account. We delete your account and its data within 30 days and confirm by email."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms",
+      "intro": "By using Soldline you agree to these simple terms.",
+      "sections": [
+        {
+          "heading": "A demo for evaluation",
+          "body": "Soldline is demo software provided as it is, so you can see how it works. It comes with no promise that it fits any particular use."
+        },
+        {
+          "heading": "Keep real data out",
+          "body": "Do not enter real client data, passwords or keys. The sample data in the demo is made up and is not real."
+        },
+        {
+          "heading": "Fair use",
+          "body": "Use the demo fairly. Do not try to break it, overload it or reach data that is not yours."
+        },
+        {
+          "heading": "Resets",
+          "body": "We may reset or remove demo data at any time. Demo workspaces end after 6 hours."
+        },
+        {
+          "heading": "Contact",
+          "body": "Questions about these terms go to shanifadhil022@gmail.com."
+        }
+      ]
+    }
   }
 }

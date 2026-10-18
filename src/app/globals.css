@@ -179,3 +179,8 @@ h1, h2, strong { font-weight: 600; }
 }
 .not-found { margin-block: 0; min-block-size: 100dvh; align-content: center; justify-items: start; border: 0; border-radius: 0; padding-block: 24px; padding-inline: 24px; }
 .trust-card h3 a, .audit-row a { display: inline-flex; align-items: center; min-block-size: 44px; }
+.legal-body { max-inline-size: 720px; padding-block: 40px 64px; }
+.legal-body h1 { font-size: 32px; line-height: 1.25; margin-block: 0 16px; }
+.legal-body h2 { font-size: 20px; line-height: 1.35; margin-block: 32px 8px; }
+.legal-body p { font-size: 16px; line-height: 1.6; margin-block: 0 12px; }
+.legal-links { display: flex; gap: 16px; flex-wrap: wrap; }
