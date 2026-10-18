@@ -51,7 +51,7 @@ export class ForbiddenError extends Error {
 export function assertCan(member: Member, action: Action, resource: Resource): void {
   if (!can(member, action, resource)) {
     const message = action === 'approve_plan' && member.roles.length === 1 && member.roles[0] === 'contributor'
-      ? 'Contributors cannot approve delivery plans.' : 'You do not have permission to perform this action.';
+      ? 'Only a delivery lead or the agency director can approve delivery plans.' : 'You do not have permission to perform this action.';
     throw new ForbiddenError(action, resource, message);
   }
 }

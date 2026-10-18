@@ -69,10 +69,10 @@
     "error": "We could not start the demo. Please try again.",
     "open": "Open workspace",
     "roles": {
-      "admin": "Workspace owner",
+      "admin": "Agency director",
       "account_manager": "Account manager",
       "delivery_lead": "Delivery lead",
-      "contributor": "Team member",
+      "contributor": "Specialist",
       "client_reviewer": "Client reviewer"
     },
     "people": {
@@ -423,6 +423,45 @@
           "body": "Questions about these terms go to shanifadhil022@gmail.com."
         }
       ]
+    }
+  },
+  "errors": {
+    "tryAgain": "Try again",
+    "home": "Back to home",
+    "signIn": "Sign in again",
+    "crash": {
+      "title": "Something went wrong",
+      "body": "Soldline hit a problem on our side. Your work is saved. Try again, or go back to the home page."
+    },
+    "auth": {
+      "Configuration": {
+        "title": "Sign in is not ready",
+        "body": "Google sign in is not set up correctly on our side. Try the demo for now, or try again later."
+      },
+      "AccessDenied": {
+        "title": "Sign in was not allowed",
+        "body": "Google did not allow this account to sign in. Try another Google account."
+      },
+      "Verification": {
+        "title": "This sign in link has expired",
+        "body": "The link was already used or is too old. Sign in again to get a fresh one."
+      },
+      "OAuthSignin": {
+        "title": "Could not reach Google",
+        "body": "We could not start the Google sign in. Check your connection and try again."
+      },
+      "OAuthCallback": {
+        "title": "Google sign in did not finish",
+        "body": "Google sent us back without finishing the sign in. Try again."
+      },
+      "OAuthAccountNotLinked": {
+        "title": "This email already has an account",
+        "body": "Sign in with the same Google account you used before."
+      },
+      "Default": {
+        "title": "We could not sign you in",
+        "body": "Something stopped the sign in. Try again in a minute."
+      }
     }
   }
 }

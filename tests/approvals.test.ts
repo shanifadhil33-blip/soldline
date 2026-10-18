@@ -99,7 +99,7 @@ it('Allows an agent request to be approved by the asking member',async()=>{
 it('Contributor receives 403 with a denied audit row through the decide route',async()=>{
   const a=await create();mocks.member.mockResolvedValue(member('contributor'));
   const response=await decideRoute(new Request('http://localhost',{method:'POST',body:JSON.stringify({decision:'approve'})}),{params:Promise.resolve({id:a.id})});
-  expect(response.status).toBe(403);expect(await response.json()).toMatchObject({message:'Contributors cannot approve delivery plans.'});
+  expect(response.status).toBe(403);expect(await response.json()).toMatchObject({message:'Only a delivery lead or the agency director can approve delivery plans.'});
   expect((await database.db.query("SELECT outcome,actor_member_id FROM audit_log WHERE target_id=$1 AND outcome='denied'",[a.id])).rows).toEqual([{outcome:'denied',actor_member_id:f.contributor}]);await noEffects(a);
 });
 it('Rechecks stored roles instead of trusting a caller supplied admin role',async()=>{

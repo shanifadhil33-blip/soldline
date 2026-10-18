@@ -8,7 +8,7 @@ for(const width of [360,390,1440])for(const locale of ['en','ar'] as const)test(
   const response=page.waitForResponse(r=>r.url().endsWith('/api/demo/backend-check'));
   await page.getByRole('button',{name:t.tryRavi}).click();
   const body=await(await response).json();
-  expect(body.status).toBe(403);expect(body.message).toBe('Contributors cannot approve delivery plans.');
+  expect(body.status).toBe(403);expect(body.message).toBe('Only a delivery lead or the agency director can approve delivery plans.');
   await expect(page.locator('.backend-check')).toContainText('403');
   await expect(page.locator('.backend-check')).toContainText(body.message);
   await expect(page.locator('.backend-check')).toContainText('Ravi Menon');

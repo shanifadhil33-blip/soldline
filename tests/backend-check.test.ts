@@ -16,7 +16,7 @@ it('Demo backend check sends the existing POST with the actual Ravi session and 
  const run=(await db.query<{id:string}>('SELECT id FROM runs WHERE workspace_id=$1 LIMIT 1',[sandbox])).rows[0].id;
  const request=()=>new Request('http://localhost/api/demo/backend-check',{method:'POST',headers:{cookie},body:JSON.stringify({runId:run})});
  const first=await check(request());expect(first.status).toBe(200);const body=await first.json();
- expect(body).toMatchObject({request:{method:'POST',path:`/api/runs/${run}/approve-plan`},status:403,message:'Contributors cannot approve delivery plans.',row:{action:'approve_plan',outcome:'denied',actor_name_at_event:'Ravi Menon',target_id:run}});
+ expect(body).toMatchObject({request:{method:'POST',path:`/api/runs/${run}/approve-plan`},status:403,message:'Only a delivery lead or the agency director can approve delivery plans.',row:{action:'approve_plan',outcome:'denied',actor_name_at_event:'Ravi Menon',target_id:run}});
  const response=await audit(new Request('http://localhost/api/audit',{headers:{cookie}}));const log=await response.json();expect(log.rows.find((r:{id:number})=>r.id===body.row.id)).toEqual(body.row);expect(log.chain.ok).toBe(true);
  const second=await(await check(request())).json();expect(Number(second.row.id)).toBeGreaterThan(Number(body.row.id));
  expect((await db.query('SELECT id FROM approvals WHERE workspace_id=$1',[sandbox])).rows).toHaveLength(0);
