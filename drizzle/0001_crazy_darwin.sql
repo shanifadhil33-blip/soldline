@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_identity_check" CHECK ("workspaces"."workspace_id" = "workspaces"."id");
