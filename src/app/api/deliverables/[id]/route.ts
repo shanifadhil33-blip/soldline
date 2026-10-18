@@ -1,7 +1,7 @@
 import { getMember } from '../../../../server/session';
 import { getAppDriver,getOwnerServices } from '../../../../server/db/runtime';
 import { withMember } from '../../../../server/db/withMember';
-import { withMemberRoute } from '../../../../server/http';
+import { withMemberRoute, answer, fail } from '../../../../server/http';
 import { assertCan } from '../../../../server/permissions';
 export const GET=withMemberRoute(async (_request,context,member,db)=>{
   const {id}=await context.params;
@@ -13,10 +13,10 @@ export const GET=withMemberRoute(async (_request,context,member,db)=>{
 });
 
 export async function POST(request:Request,context:{params:Promise<Record<string,string>>}) {
-  const member=await getMember(request);if(!member)return Response.json({},{status:401});
+  const member=await getMember(request);if(!member)return fail(401);
   const {id}=await context.params;
   const visible=await withMember(getAppDriver(),member.id,async db=>(await db.query('SELECT task_id FROM monitor_tasks WHERE task_id=$1',[id])).rows.length>0);
-  if(!visible)return Response.json({},{status:404});
+  if(!visible)return fail(404);
   const {status}=await getOwnerServices().trust.approveDeliverable(member,id,(actor,action,resource)=>assertCan(actor,action,resource));
-  return Response.json({},{status});
+  return answer(status,'Deliverable approved');
 }
