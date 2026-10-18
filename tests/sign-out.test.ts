@@ -25,8 +25,8 @@ it('Redirects a form post home with 303', async () => {
 
 it('Refuses a cross site POST and never signs out on GET', async () => {
   const cross = await POST(new Request(url, { method: 'POST', headers: { 'sec-fetch-site': 'cross-site', cookie: 'authjs.session-token=tok' } }));
-  expect(cross.status).toBe(403); expect(await cross.json()).toMatchObject({ ok: false, error: { code: 'not_allowed' } });
+  expect(cross.status).toBe(403); expect(await cross.json()).toMatchObject({ error: 'not_allowed' });
   const get = await GET();
-  expect(get.status).toBe(405); expect((await get.json()).error.message).toBeTruthy();
+  expect(get.status).toBe(405); expect((await get.json()).message).toBeTruthy();
   expect(mocks.deleteSession).not.toHaveBeenCalled();
 });

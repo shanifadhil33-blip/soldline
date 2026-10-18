@@ -22,7 +22,7 @@ export function sameSite(request: Request): boolean {
 }
 
 export async function signOutRequest(request: Request): Promise<Response> {
-  if (!sameSite(request)) return Response.json({ ok: false, error: { code: 'not_allowed', message: 'Sign out from inside Soldline.' } }, { status: 403 });
+  if (!sameSite(request)) return Response.json({ error: 'not_allowed', message: 'Sign out from inside Soldline.' }, { status: 403 });
   const member = await getMember(request);
   if (member) {
     await withMember(getAppDriver(), member.id, db => append(db, member.workspace_id, { action: 'sign_out', outcome: 'succeeded', target_type: 'member', target_id: member.id }));
