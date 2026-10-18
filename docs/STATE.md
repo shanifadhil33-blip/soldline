@@ -12,9 +12,17 @@ The single permission matrix covers all 50 role and action cells, role unions, r
 
 P3 verification passes 215 tests across 16 files, including a complete Google OAuth callback through MSW fixtures and PGlite. The gate passes lint, types, tests and production build with exit code 0. See docs/P3.md for files, decisions and verification limits.
 
+P4 adds typed HubSpot and ClickUp clients and the AgentMail team inbox adapter. Tokens use versioned AES 256 GCM encryption with random 12 byte IVs. Provider health commits in short server transactions, independent of outbound failures. A 401 or 403 marks only that provider as needs_reconnect and blocks further calls until an admin saves a new credential. Pausing and resuming cannot clear a reconnect requirement. Webhook secrets are encrypted and stored by webhook id.
+
+Postgres token buckets share HubSpot limits by account and ClickUp limits by token fingerprint across workspaces. The new rate_buckets and demo_faults tables have enabled and forced row security and the same restrictive workspace and staff policies as P2. The app role has no direct writes to either table. Demo faults decrement atomically and only when the workspace is a demo. Every outbound client attempt has a fresh request id in audit details. Provider bodies, tokens and raw network exceptions never enter audit or public errors.
+
+The seed entry scripts require SEED_CONFIRM=yes and process credentials. Their shared logic is covered through MSW fixtures for repeated setup without duplicate objects. They were not run. The three page signed sample PDF is generated from the scope fixture and saved for P6. Page two contains all eight numbered deliverables.
+
+P4 verification passes 290 tests across 18 files. The full gate passes lint, types, tests and production build with exit code 0 using local cached font fixtures. See docs/P4.md for files and verification limits.
+
 ## Next
 
-P4 connectors and seed scripts with the team inbox mail adapter instead of Gmail. Continue using local fixtures until live service work is explicitly requested.
+P5 event ingestion and reconciliation. Continue using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -42,9 +50,34 @@ Contributor scope suggestions and client scope requests use an explicit intent a
 
 ## Parked
 
+UNVERIFIED mail paths below all require confirmation against the live inbox API before P8. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
+
+`GET /inboxes/{inbox}`
+
+`GET /inboxes/{inbox}/messages` for listMessagesSince and searchSent
+
+`GET /inboxes/{inbox}/messages/{id}`
+
+`GET /inboxes/{inbox}/threads/{id}`
+
+`POST /inboxes/{inbox}/drafts`
+
+`POST /inboxes/{inbox}/drafts/{id}/send`
+
+TODO UNVERIFIED HubSpot owners, notes batch read and Files signed URL paths have no default. The HUBSPOT_PATHS block reserves them as undefined. Confirm the 2026 March reference and supply explicit paths before live use. Association pagination and association paths also need confirmation. All provided deal and line item methods use the supplied 2026 March paths.
+
+TODO UNVERIFIED seed paths for company, contact, product and line item search and create follow `/crm/objects/2026-03/{type}` and `/crm/objects/2026-03/{type}/search`. Confirm these before a sandbox run. Notes search, notes create, file search, file upload and the association URL template require explicit process settings and have no guessed default. Confirm their response shapes, supported search filters and multipart fields too. The single SEED_PATHS block holds the base paths and unknown slots. See docs/P4.md for settings. The sandbox deal stage must be supplied explicitly.
+
+MAIL_API_BASE defaults to `https://api.agentmail.to/v0`. MAIL_API_KEY supplies Bearer authentication and MAIL_INBOX_ADDRESS identifies `adhil+bilal@mail.grokbot.com`. Explicit admin setup encrypts the key before client use. TOKEN_ENC_KEY must be exactly 32 bytes encoded as base64. No environment file was opened or edited. Adding MAIL_API_BASE to the example file remains outside the shared boundary on environment files.
+
+The existing unpdf version needs Iterator support that this Node 20 runtime does not provide. P4 validates the actual generated PDF text streams through pdf lib. The general PDF parser runtime belongs to P6 and was not changed.
+
+HubSpot approval checks read the current modified time and the approved values before a write. The provider offers no confirmed conditional write mechanism in the supplied notes. A remote change between that read and patch remains a provider concurrency limit to confirm before the real approval engine.
+
+
 Contributors see runs linked to findings or recovery_items they own until tasks exist. Replace this approximation when task ownership is available.
 
-Provider connections, token encryption use, the cleanup worker, real approvals, delivery features, language switching and deployment belong to later phases. P7 must replace the audit only demo approval proof. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
+The cleanup worker, real approvals, delivery features, language switching and deployment belong to later phases. P7 must replace the audit only demo approval proof. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
 
 ## Services
 

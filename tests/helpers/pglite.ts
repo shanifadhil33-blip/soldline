@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { migrate } from '../../src/server/db/migrate';
 import { withMember, type SqlConnection } from '../../src/server/db/withMember';
 
-export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications'] as const;
+export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications','demo_faults','rate_buckets'] as const;
 export const roles = ['admin','account_manager','delivery_lead','contributor','client_reviewer'] as const;
 export function id(group: number, value: number) { return `00000000-0000-4000-8000-${String(group * 1000 + value).padStart(12, '0')}`; }
 export const fixture = (g: number) => ({ ws: id(g,1), companyA: id(g,2), companyB: id(g,3), admin: id(g,10), manager: id(g,11), lead: id(g,12), contributor: id(g,13), reviewer: id(g,14), other: id(g,15), archived: id(g,16), runA: id(g,30), runB: id(g,31), runOther: id(g,32), thread: id(g,60) });
@@ -26,6 +26,8 @@ export async function createDatabase() {
     await insert('accounts', { user_id: id(group,100), type: 'oauth', provider: 'demo', provider_account_id: 'adhil' });
     await insert('sessions', { user_id: id(group,100), session_token: 'demo', expires: '2027-01-01T00:00:00Z' });
     await insert('verification_tokens', { identifier: 'adhil', token: 'demo', expires: '2027-01-01T00:00:00Z' });
+    await insert('demo_faults', { provider: 'clickup', mode: 'outage', fail_next: 0 });
+    await insert('rate_buckets', { provider: 'clickup', bucket_key: `fixture${group}`, tokens: '100', updated_at: new Date().toISOString() });
     await insert('connections', { provider: 'mail', status: 'connected' });
     for (let n = 0; n < 3; n++) {
       const deal = id(group,20+n), run = id(group,30+n);

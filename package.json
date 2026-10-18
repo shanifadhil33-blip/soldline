@@ -38,7 +38,9 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
     "msw": "^2.12.0",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.0",
     "vitest": "^3.2.4"
   }

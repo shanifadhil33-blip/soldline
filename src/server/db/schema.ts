@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, jsonb, bigserial, unique, check, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, jsonb, bigserial, primaryKey, unique, check, foreignKey } from 'drizzle-orm/pg-core';
 
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -119,8 +119,10 @@ export const connections = pgTable('connections', {
   expires_at: timestamp('expires_at', { withTimezone: true, mode: 'string' }),
   last_ok_at: timestamp('last_ok_at', { withTimezone: true, mode: 'string' }),
   last_error_code: text('last_error_code'),
+  webhook_secrets: jsonb('webhook_secrets').notNull().default({}),
   allowed_actions: jsonb('allowed_actions')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
+  unique('connections_workspace_provider').on(t.workspace_id, t.provider),
   check('connections_provider_check', sql`${t.provider} in ('hubspot', 'clickup', 'mail')`),
   check('connections_status_check', sql`${t.status} in ('connected', 'needs_reconnect', 'paused', 'revoked')`),
   unique('connections_workspace_id_id').on(t.workspace_id, t.id),
@@ -534,3 +536,26 @@ export const notifications = pgTable('notifications', {
   foreignKey({ columns: [t.workspace_id], foreignColumns: [workspaces.id] })
 ]);
 
+
+export const demo_faults = pgTable('demo_faults', {
+  workspace_id: uuid('workspace_id').notNull().references(() => workspaces.id),
+  provider: text('provider', { enum: ['hubspot', 'clickup', 'mail'] }).notNull(),
+  fail_next: integer('fail_next').notNull().default(0),
+  mode: text('mode', { enum: ['outage', 'revoked'] }).notNull(),
+}, t => [
+  primaryKey({ columns: [t.workspace_id, t.provider] }),
+  check('demo_faults_provider_check', sql`${t.provider} in ('hubspot','clickup','mail')`),
+  check('demo_faults_count_check', sql`${t.fail_next} >= 0`),
+  check('demo_faults_mode_check', sql`${t.mode} in ('outage','revoked')`),
+]);
+export const rate_buckets = pgTable('rate_buckets', {
+  workspace_id: uuid('workspace_id').notNull().references(() => workspaces.id),
+  provider: text('provider', { enum: ['hubspot', 'clickup'] }).notNull(),
+  bucket_key: text('bucket_key').notNull(),
+  tokens: numeric('tokens').notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull(),
+}, t => [
+  primaryKey({ columns: [t.provider, t.bucket_key] }),
+  check('rate_buckets_provider_check', sql`${t.provider} in ('hubspot','clickup')`),
+  check('rate_buckets_tokens_check', sql`${t.tokens} >= 0 and ${t.tokens} <= 100`),
+]);
