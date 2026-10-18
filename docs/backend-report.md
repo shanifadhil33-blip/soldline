@@ -57,6 +57,8 @@ All member routes require a valid session or unexpired signed demo cookie. Datab
 | `POST /api/demo/start` | Public, with a known persona; signed cookie permits sandbox reuse | Main walk; tests/demo.test.ts: Returns 200 for 50 rapid starts through the route directly |
 | `POST /api/sign-out` | Any visitor, same site only (Sec-Fetch-Site or Origin); deletes the Auth.js session, clears session and demo cookies, audit row sign_out when a member was signed in; 303 home for forms, JSON otherwise | tests/sign-out.test.ts |
 | `GET /api/sign-out` | Never signs out; 405 with a plain message | tests/sign-out.test.ts |
+| `GET /api/notifications` | Signed in member or demo persona; own rows only (RLS plus member filter); newest 50 and the unread count | tests/notifications-triggers.test.ts |
+| `POST /api/notifications/read` | Own rows only; ids (1 to 100 uuids) or all: true; 400 names the expected body | tests/notifications-triggers.test.ts |
 | `POST /api/webhooks/hubspot` | Valid HubSpot signature, timestamp and configured portal | Both walks; tests/system-routes.test.ts: Webhook invalid signatures never query the event store or register a worker |
 | `POST /api/webhooks/clickup` | Valid MAC from an encrypted configured webhook secret and matching webhook id | tests/events-jobs.test.ts: Verifies ClickUp before JSON parsing and deduplicates each history item; Refuses a ClickUp body with a different webhook id even when another stored secret signed it |
 | `POST /api/jobs/tick` | Exact configured tick bearer | Both walks; tests/system-routes.test.ts: Tick without bearer returns 401 before constructing database services |
@@ -153,3 +155,5 @@ The existing run read now includes staff approval payloads, visible audit rows a
 `POST /api/demo/backend-check` invokes the existing plan approval POST with the signed Ravi demo session and reads the new denial from the audit service.
 
 Server actions: none. Trust controls call route handlers. Input mutation and client deliverable approval routes were absent before P13 and are narrow additions. Client approval records the local review decision and does not claim a remote ClickUp mutation.
+
+Notifications (P14, Oct 19 2026): migration 0011_notifications.sql adds triggers so every write path notifies. New approval: every member whose roles can approve it, not the requester. Decision: the requester and the account manager. Stale: approvers, once. Recovery opened: its owner. Recovery resolved: account manager and delivery lead. Client input received and client review approved: account manager and delivery lead. Connection needs reconnect or revoked: agency directors, at most once an hour. Never the actor, never a client reviewer, deduped, in the member's language.
