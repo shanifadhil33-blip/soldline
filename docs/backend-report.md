@@ -137,3 +137,17 @@ During initial instruction discovery, a find command listed AGENTS.md paths in n
 `POST /api/approvals/[id]/run` uses the existing P7 approval HTTP boundary and schedules the existing P8 worker through Next after only when execution is accepted. It adds no approval or executor rules.
 
 The existing run read now includes staff approval payloads, visible audit rows and workspace member display names. Client responses keep their existing narrow shape.
+
+
+## P13 trust routes
+
+`GET /api/recovery` lists visible open items with their stored allowed options.
+`GET /api/audit` checks the complete chain with the existing verifier and limits rows to the stored role and run ownership.
+`GET /api/connections` returns provider status and capability labels without credentials.
+`POST /api/connections` refuses non admins with an audit append and delegates authorized changes to P4.
+`GET /api/client` reads company scoped inputs and deliverables through RLS.
+`POST /api/inputs/[id]` confirms a visible input through the existing input write policies.
+`POST /api/deliverables/[id]` records client approval only for his company in Client review.
+`POST /api/demo/backend-check` invokes the existing plan approval POST with the signed Ravi demo session and reads the new denial from the audit service.
+
+Server actions: none. Trust controls call route handlers. Input mutation and client deliverable approval routes were absent before P13 and are narrow additions. Client approval records the local review decision and does not claim a remote ClickUp mutation.

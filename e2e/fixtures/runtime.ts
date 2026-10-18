@@ -1,4 +1,5 @@
 // Used only by the explicit local webpack fixture build. No external database or provider.
+import { prepareTrust } from '@/../e2e/fixtures/trust';
 import { PGlite } from '@electric-sql/pglite';
 import { setupServer } from 'msw/node';
 import { coreHandlers,prepareCore } from '@/../e2e/fixtures/core';
@@ -25,7 +26,7 @@ function runtime(): FixtureState {
   const prepared=new Set<string>();
   services.demo.start=async(...args)=>{
     const ticket=await start(...args);
-    if(!prepared.has(ticket.sandbox)) {await prepareCore(owner,services,ticket.sandbox);prepared.add(ticket.sandbox);}
+    if(!prepared.has(ticket.sandbox)) {await prepareCore(owner,services,ticket.sandbox);await prepareTrust(owner,ticket.sandbox);prepared.add(ticket.sandbox);}
     return ticket;
   };
   const state = { database, owner: services, app };

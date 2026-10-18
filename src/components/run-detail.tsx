@@ -3,6 +3,7 @@ import { useCallback,useEffect,useState } from 'react';
 import { loadMessages,type Language } from '../lib/i18n';
 import type { Approval } from '../server/approvals/model';
 import { demoPeople } from '../lib/demo-personas';
+import { BackendCheck } from './trust-screens';
 import { ApprovalCard } from './approval-card';
 type Finding={id:string;title:string;evidence:Record<string,unknown>|Record<string,unknown>[]|null};
 type Detail={run:{id:string;status:string;plan:{tasks?:{title:string;owner:string;due:string}[]}|null};title:string;findings:Finding[];inputs:{id:string;label:string;status:string}[];items:{key:string;title:string;source_quote:string}[];approvals:Approval[];history:{id:string;at:string;action:string;actor_name_at_event:string;outcome:string}[];members:{id:string;display_name:string;clickup_user_id:string|null}[];isDemo:boolean};
@@ -33,7 +34,7 @@ export function RunDetail({id,locale,initialTab='plan'}:{id:string;locale:Langua
     {tab==='history'&&timeline}
     {tab==='emails'&&<div>{data.approvals.filter(a=>a.payload.effects.some(e=>e.message)).map(a=><ApprovalCard key={a.id} approval={a} locale={locale} onRefresh={refresh}/>)}{!data.approvals.some(a=>a.payload.effects.some(e=>e.message))&&<p>{m.empty}</p>}</div>}
     {tab==='clickup'&&<section><h2>{m.live}</h2>{tasks?<><p>{m.readAt}: <time>{date(tasks.readAt)}</time></p><div className="task-list">{tasks.tasks.map(t=><article key={t.id}><h3>{t.name}</h3><dl><div><dt>{m.tasks[1]}</dt><dd>{t.assignees?.map(a=>{const external=String(typeof a==='number'?a:a.id);return data.members.find(x=>x.clickup_user_id===external)?.display_name??(typeof a==='object'?a.username:null)??m.unassigned;}).join(', ')||m.unassigned}</dd></div><div><dt>{m.tasks[2]}</dt><dd>{t.due_date?date(new Date(Number(t.due_date)).toISOString()):m.none}</dd></div><div><dt>{m.tasks[3]}</dt><dd>{m.statuses[t.status?.status as keyof typeof m.statuses]??t.status?.status??m.none}</dd></div></dl></article>)}</div>{!tasks.tasks.length&&<p>{m.noTasks}</p>}</>:<p>{error||m.loading}</p>}</section>}
-    {data.isDemo&&<section className="demo-controls"><h2>{m.demoControls}</h2><button className="button" disabled={busy} onClick={runReplay}>{m.replay}</button>{replay&&<p role="status">{replay}</p>}</section>}
+    {data.isDemo&&<section className="demo-controls"><h2>{m.demoControls}</h2><button className="button" disabled={busy} onClick={runReplay}>{m.replay}</button>{replay&&<p role="status">{replay}</p>}<BackendCheck id={id} locale={locale}/></section>}
   </section>;
 }
 function showEvidence(evidence:Record<string,unknown>|Record<string,unknown>[]|null,key:string,empty:string):string {

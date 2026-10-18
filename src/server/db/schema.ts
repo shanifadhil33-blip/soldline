@@ -601,6 +601,8 @@ export const monitor_tasks = pgTable('monitor_tasks', {
   run_id: uuid('run_id').notNull(),
   task_id: text('task_id').notNull(),
   status: text('status').notNull(),
+  client_approved_at: timestamp('client_approved_at', {withTimezone:true,mode:'string'}),
+  client_approved_by: uuid('client_approved_by'),
   review_since: timestamp('review_since', {withTimezone:true,mode:'string'}),
   due_at: timestamp('due_at', {withTimezone:true,mode:'string'}),
   scope_item_id: uuid('scope_item_id'),
@@ -609,6 +611,8 @@ export const monitor_tasks = pgTable('monitor_tasks', {
   observed_at: timestamp('observed_at', {withTimezone:true,mode:'string'}).notNull(),
 }, t=>[
   primaryKey({columns:[t.workspace_id,t.run_id,t.task_id]}),
+  foreignKey({columns:[t.workspace_id,t.client_approved_by],foreignColumns:[members.workspace_id,members.id]}),
+  check('client_review_pair',sql`(${t.client_approved_at} IS NULL) = (${t.client_approved_by} IS NULL)`),
   foreignKey({columns:[t.workspace_id,t.run_id],foreignColumns:[runs.workspace_id,runs.id]}),
   foreignKey({columns:[t.workspace_id,t.scope_item_id],foreignColumns:[scope_items.workspace_id,scope_items.id]}),
 ]);

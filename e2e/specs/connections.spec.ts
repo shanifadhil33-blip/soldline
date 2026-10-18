@@ -1,0 +1,27 @@
+import { expect,test } from '@playwright/test';
+import { begin,fits } from '../fixtures/trust-browser';
+for(const width of [360,390,1440])for(const locale of ['en','ar'] as const)test(`Connections ${width} ${locale}`,async({page})=>{
+  const m=await begin(page,width,locale,'faisal'),t=m.trust;
+  await page.goto('/connections');
+  const hub=page.locator('[data-provider="hubspot"]'),mail=page.locator('[data-provider="mail"]');
+  await expect(hub).toContainText(t.scopeNames['crm.objects.deals.read']);
+  await expect(hub).toContainText(t.actionNames.patch_deal_properties);
+  await hub.getByRole('button',{name:t.pause,exact:true}).click();
+  await expect(hub.getByText(t.health.paused,{exact:true})).toBeVisible();
+  await hub.getByRole('button',{name:t.resume,exact:true}).click();
+  await expect(hub.getByText(t.health.connected,{exact:true})).toBeVisible();
+  await mail.getByRole('button',{name:t.pause,exact:true}).click();
+  await expect(mail.getByText(t.health.needs_reconnect,{exact:true})).toBeVisible();
+  await mail.getByRole('button',{name:t.reconnect,exact:true}).click();
+  await mail.getByLabel(t.token).fill('local fixture token');
+  await mail.getByLabel(t.account).fill('local fixture inbox');
+  await mail.locator('form').getByRole('button',{name:t.reconnect,exact:true}).click();
+  await expect(mail.getByText(t.health.connected,{exact:true})).toBeVisible();
+  await fits(page,width);
+  await page.getByRole('combobox',{name:m.shell.persona}).selectOption('omar');
+  await expect(page).toHaveURL(/\/today/);
+  await page.goto('/connections');
+  await expect(page.getByText(t.readOnly,{exact:true})).toHaveCount(3);
+  await expect(page.getByRole('button',{name:t.pause,exact:true})).toHaveCount(0);
+  expect((await page.request.post('/api/connections',{data:{provider:'hubspot',operation:'pause'}})).status()).toBe(403);
+});

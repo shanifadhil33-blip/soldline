@@ -151,3 +151,31 @@ h1, h2, strong { font-weight: 600; }
   .detail-columns { grid-template-columns: minmax(0,1fr); }
   .metric-strip > div { flex-basis: 50%; padding-inline: 12px; }
 }
+
+/* Trust screens use white surfaces and logical spacing in both languages. */
+.app-frame { background: #fff; }
+.trust-card { display: grid; gap: 12px; border: 1px solid var(--border-structure); border-radius: 8px; padding-block: 20px; padding-inline: 20px; margin-block: 12px; min-inline-size: 0; overflow-wrap: anywhere; background: #fff; }
+.trust-card ul { padding-inline-start: 24px; margin-block: 0; }
+.trust-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.trust-error { display: grid; gap: 12px; justify-items: start; border-inline-start: 4px solid var(--border-structure); padding-inline-start: 16px; }
+.recovery-columns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr); gap: 24px; align-items: start; }
+.recovery-list { display: grid; gap: 8px; min-inline-size: 0; }
+.recovery-list button { min-block-size: 48px; padding-block: 16px; padding-inline: 16px; text-align: start; overflow-wrap: anywhere; }
+.recovery-list [aria-current="true"] { border-color: var(--accent); border-inline-start-width: 4px; }
+.recovery-detail { margin-block: 0; }
+.screen input { font: inherit; min-block-size: 44px; min-inline-size: 0; max-inline-size: 100%; border: 1px solid var(--border-structure); border-radius: 6px; padding-block: 8px; padding-inline: 12px; background: #fff; }
+.screen label, .screen-toolbar > * { min-inline-size: 0; max-inline-size: 100%; }
+.screen [aria-invalid="true"] { outline: 2px solid #8b432b; border-color: #8b432b; }
+.undo-toast { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border: 1px solid var(--border-structure); padding-block: 12px; padding-inline: 16px; background: #fff; }
+.audit-row { border-block-end: 1px solid var(--border); padding-block: 16px; padding-inline: 16px; overflow-wrap: anywhere; }
+.audit-row dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.audit-row dl > div { display: block; }
+.denied-row { background: #f6ece4; border-inline-start: 4px solid #8b432b; }
+.backend-check { display: grid; gap: 12px; min-inline-size: 0; inline-size: 100%; overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .recovery-columns { grid-template-columns: minmax(0,1fr); }
+  .audit-row dl { grid-template-columns: minmax(0,1fr); }
+  .screen-toolbar label { inline-size: 100%; }
+}
+.not-found { margin-block: 0; min-block-size: 100dvh; align-content: center; justify-items: start; border: 0; border-radius: 0; padding-block: 24px; padding-inline: 24px; }
+.trust-card h3 a, .audit-row a { display: inline-flex; align-items: center; min-block-size: 44px; }

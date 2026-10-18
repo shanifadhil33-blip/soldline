@@ -54,15 +54,18 @@ P11 completes the public home, six persona demo picker and authenticated app fra
 
 P12 replaces Today and Runs placeholders and adds run detail with evidence, exact approvals, local expiry, task reads and replay. The screen delegates approval execution to P7 and schedules the existing P8 worker. The explicit P11 browser runtime now prepares approvals through the real service and serves provider traffic with MSW. A separate stale fixture proves the visible Out of date sentence and a refused execute request. The full browser suite passes 51 checks. The final core rerun passes all four width and language cases in 12.3 seconds. The final unit run passes 580 tests across 33 files and pnpm gate exits 0 after lint, types, tests and the standard production build. See docs/P12.md for the sixty second script, files, verification and limits.
 
+
+P13 replaces Recovery, Audit log, Connections, client Home and Inputs with working trust screens. The demo backend panel uses the existing Ravi approval refusal and reads its new audit row. Audit checks the complete chain and limits rows by stored roles and run ownership. Client reads and writes enforce company isolation, foreign links share the neutral missing page, and the new client approval fields survive repeated monitor observations. Provider changes reuse P4 and recovery actions reuse P8. The final unit run passes 601 tests across 35 files and the standard gate exits 0. The full browser suite passes 83 checks and the final five trust spec rerun passes all 32 checks. See docs/P13.md for each rule, its test, verification and limits.
+
 ## Next
 
-Continue Recovery and the remaining application screens inside the P11 frame against the verified backend routes. A real demo reset and live Recovery counts remain pending. Bilal owns the separate live sandbox run after confirming every provider path. Keep live acceptance pending until he supplies the output.
+P14. Continue the remaining application work from the verified P11 shell and P13 trust screens. Bilal owns the separate live sandbox acceptance.
 
 ## Decisions
 
 Node 22 is the target. P10 verification selects the supplied Node v22.23.3 before every shell command. The package engine still accepts Node >=20.9. No runtime was installed.
 
-Use pnpm, Next.js 16 App Router, TypeScript strict and Tailwind 4. P11 uses warm paper backgrounds, Charcoal Ink text, Deep Muted Teal for primary buttons and active state only, Dusty Camel for structural borders and neutral borders elsewhere. Spacing is 4, 8, 12, 16 and 24 pixels. Radius is 6 or 8 pixels.
+Use pnpm, Next.js 16 App Router, TypeScript strict and Tailwind 4. P13 application screens use pure white backgrounds. P11 public pages retain warm paper backgrounds, Charcoal Ink text, Deep Muted Teal for primary buttons and active state only, Dusty Camel for structural borders and neutral borders elsewhere. Spacing is 4, 8, 12, 16 and 24 pixels. Radius is 6 or 8 pixels.
 
 Inter uses weights 400 and 600. IBM Plex Sans Arabic uses 400 only with synthetic weight disabled. Both use next/font/google and are downloaded at build time.
 
@@ -83,6 +86,9 @@ Demo members have a null user link. A database trigger requires real members to 
 Contributor scope suggestions and client scope requests use an explicit intent and cannot become full proposals. Scope acceptance needs two distinct people with account manager and delivery lead roles, or admin and one of those roles. Each approver must separately pass the requester exclusion check. Agent requests carry the asking member through the same permissions module.
 
 ## Parked
+
+P13 client approval records a durable Soldline review decision. Remote ClickUp status synchronization is outside this screen phase. Undo uses the existing separate reversal approval for supported completed effects because P8 has no direct reversal of a queue decision. Unknown provider capability identifiers receive generic plain language labels. The new client review migration must be applied before deploying these reads against an existing database.
+
 
 P10 live execution remains pending for Bilal. The confirmed path manifest must include every required provider path and a complete folder task count contract. The runner refuses missing settings, reserves ClickUp cleanup calls and stops before exceeding 60 actual calls. Real provider compatibility, live cleanup, deployed webhook delivery and live timing remain unverified. Inbound mail, injected faults and monitor observations of the just created tasks remain fixtures in live mode. See docs/backend-report.md for the exact limits and settings. No live call was made during P10.
 

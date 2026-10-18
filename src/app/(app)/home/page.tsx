@@ -1,2 +1,3 @@
-import { EmptyPage } from '../../../components/empty-page';
-export default function Page() { return <EmptyPage page="home" />; }
+import { ClientScreen } from '../../../components/trust-screens';
+import { getLanguage } from '../../../lib/locale';
+export default async function Page() {return <ClientScreen locale={await getLanguage()} />;}
