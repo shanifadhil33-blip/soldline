@@ -1,0 +1,13 @@
+.env*
+!.env.example
+node_modules/
+.next/
+coverage/
+e2e/node_modules/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.gate-audit*/
+.pnpm-store/
+.pnpm-cache/
+.pnpm-state/
