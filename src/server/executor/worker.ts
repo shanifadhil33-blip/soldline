@@ -8,7 +8,9 @@ import { after, marker, type Effect } from './model';
 import type { executorProviders } from './providers';
 type Providers=ReturnType<typeof executorProviders>;
 const taskInput=z.object({name:z.string().min(1),markdown_content:z.string().optional(),assignees:z.array(z.number().int()).min(1),due_date:z.number().finite(),time_estimate:z.number().optional()}).strict();
-const changed='Ravi changed this task after it was created. Undo would lose his work.';
+const changed='Someone changed this task after it was created. Undo would lose that work.';
+class ChangedTask extends Error {}
+type MemberName=(workspace:string,external:string)=>Promise<string|null>;
 async function taskMatches(client:Providers['clickup'],list:string,ref:string) {
   const matches=[];const seen=new Set<number>();let page=0;
   for(;;) {
@@ -22,7 +24,7 @@ async function taskMatches(client:Providers['clickup'],list:string,ref:string) {
   if(matches.length>1) throw new Error('More than one task has this Soldline reference');
   return matches[0];
 }
-async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:string,reconcileOnly=false):Promise<void> {
+async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:string,reconcileOnly=false,memberName:MemberName=async()=>null):Promise<void> {
   const record=e.request.records[0];const fields=record?after(record):{};
   const uncertain=['unknown','in_flight'].includes(e.state);
   if(e.action==='reverse') {
@@ -32,7 +34,14 @@ async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:str
     if(original.state==='compensated') {await store.set(e,'succeeded');return;}
     if(original.action==='create_task') {
       const current=await providers.clickup.getTask(original.external_id!);
-      if(!original.result?.date_updated || current.date_updated!==original.result.date_updated) throw new Error(changed);
+      if(!original.result?.date_updated || current.date_updated!==original.result.date_updated) {
+        const editor=current.last_editor??current.last_updated_by;
+        const assignee=Array.isArray(current.assignees)?current.assignees[0]:null;
+        const person=editor??assignee;
+        const external=typeof person==='object'&&person!==null&&'id' in person?String(person.id):typeof person==='number'||typeof person==='string'?String(person):null;
+        const name=external?await memberName(e.workspace_id,external):null;
+        throw new ChangedTask(name?`${name} changed this task after it was created. Undo would lose his work.`:changed);
+      }
       await store.set(e,'in_flight');
       await providers.clickup.archiveTask(original.external_id!);
     } else if(original.action==='patch_deal_properties') {
@@ -130,7 +139,7 @@ async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:str
   }
   throw new Error('This approved action is not supported');
 }
-export async function executeEffects(store:ExecutorStore,job:Job,providers:Providers,reconcileOnly=false) {
+export async function executeEffects(store:ExecutorStore,job:Job,providers:Providers,reconcileOnly=false,memberName:MemberName=async()=>null) {
   const data=await store.load(job);if(!data) return;
   for(const root of data.roots) {
     if(['succeeded','compensated'].includes(root.state)) continue;
@@ -144,12 +153,12 @@ export async function executeEffects(store:ExecutorStore,job:Job,providers:Provi
       if(child.state==='cancelled') throw new Error('Remaining work was cancelled');
       try {
         if(reconcileOnly && !['unknown','in_flight'].includes(child.state)) throw new Error('This effect needs an explicit retry');
-        await apply(store,providers,child,root.run_id,reconcileOnly);
+        await apply(store,providers,child,root.run_id,reconcileOnly,memberName);
       } catch(error) {
         const fresh=await store.get(child.workspace_id,child.id);
         const state=fresh?.state==='in_flight'||child.state==='unknown'||child.state==='in_flight'?'unknown':error instanceof Retryable?'unknown':'failed';
         await store.set(child,state);
-        const reason=error instanceof Error && [changed,'This folder or list needs a manual check before undo'].includes(error.message)?error.message:child.system==='mail'?'Mail sending needs a sent mail check':'Delivery could not finish. Retry will first check existing work.';
+        const reason=error instanceof ChangedTask || error instanceof Error && error.message==='This folder or list needs a manual check before undo'?error.message:child.system==='mail'?'Mail sending needs a sent mail check':'Delivery could not finish. Retry will first check existing work.';
         await store.recovery(job,child,reason);
         throw error;
       }

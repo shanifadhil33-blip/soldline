@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { migrate } from '../../src/server/db/migrate';
 import { withMember, type SqlConnection } from '../../src/server/db/withMember';
 
-export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications','demo_faults','rate_buckets'] as const;
+export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications','demo_faults','rate_buckets','monitor_tasks'] as const;
 export const roles = ['admin','account_manager','delivery_lead','contributor','client_reviewer'] as const;
 export function id(group: number, value: number) { return `00000000-0000-4000-8000-${String(group * 1000 + value).padStart(12, '0')}`; }
 export const fixture = (g: number) => ({ ws: id(g,1), companyA: id(g,2), companyB: id(g,3), admin: id(g,10), manager: id(g,11), lead: id(g,12), contributor: id(g,13), reviewer: id(g,14), other: id(g,15), archived: id(g,16), runA: id(g,30), runB: id(g,31), runOther: id(g,32), thread: id(g,60) });
@@ -37,6 +37,7 @@ export async function createDatabase() {
       await insert('findings', { id: id(group,40+n), run_id: run, kind: 'missing_input', owner_member_id: n === 0 ? f.contributor : f.other });
     }
     await insert('findings', { run_id: f.runA, kind: 'unusual_instruction' });
+    await insert('monitor_tasks', { run_id: f.runA, task_id: 'fixture', status: 'Open', observed_at: new Date().toISOString() });
     await insert('line_items', { deal_id: id(group,20) });
     await insert('scope_documents', { id: id(group,50), deal_id: id(group,20), source: 'upload' });
     await insert('scope_versions', { id: id(group,51), deal_id: id(group,20), version: 1, status: 'draft', source_document_id: id(group,50) });

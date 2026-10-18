@@ -1,4 +1,5 @@
 import 'server-only';
+import { monitorStore } from '../monitors/store';
 import { executorStore } from '../executor/store';
 import { executorProviders } from '../executor/providers';
 import { executeEffects } from '../executor/worker';
@@ -52,7 +53,13 @@ export function jobStore(owner: TransactionDriver) {
     async executeEffect(job:Job,deadline=Date.now()+25000) {
       const store=executorStore(owner);
       const data=await store.load(job);
-      if(data) await executeEffects(store,job,executorProviders(owner,job.workspace_id,data.inbox,deadline),job.payload.reconcileOnly==='true');
+      if(data) await executeEffects(store,job,executorProviders(owner,job.workspace_id,data.inbox,deadline),job.payload.reconcileOnly==='true',(ws,id)=>monitorStore(owner).memberName(ws,id));
+    },
+    async monitor(job:Job,deadline:number) {
+      const monitors=monitorStore(owner);
+      const runs=await owner.transaction(async db=>(await db.query<{id:string}>("SELECT id FROM runs WHERE workspace_id=$1 AND status NOT IN ('paused','cancelled')",[job.workspace_id])).rows);
+      for(const run of runs) await monitors.refreshTasks(job.workspace_id,run.id,Date.now(),deadline);
+      await monitors.scan(job.workspace_id);
     },
     async hubspotConnections(portal: string) {
       return owner.transaction(async db => (await db.query<Connection>("SELECT c.* FROM connections c JOIN workspaces w ON w.id=c.workspace_id WHERE provider='hubspot' AND status='connected' AND external_account_id=$1 AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())",[portal])).rows);
@@ -77,6 +84,10 @@ export function jobStore(owner: TransactionDriver) {
     schedule(now: number, daily=false) {
       return owner.transaction(async db => {
         const rows=await db.query<Connection>("SELECT c.* FROM connections c JOIN workspaces w ON w.id=c.workspace_id WHERE c.status='connected' AND c.provider IN ('mail','hubspot') AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())");
+        if(!daily) {
+          const workspaces=await db.query<{id:string}>("SELECT id FROM workspaces WHERE NOT coalesce(is_demo,false) OR demo_expires_at>now()");
+          for(const ws of workspaces.rows) await enqueue(db,ws.id,'monitor_workspace',`monitor:${Math.floor(now/300000)}`,{},'schedule');
+        }
         for(const c of rows.rows) {
           if(c.provider==='mail' && daily) continue;
           const kind=c.provider==='mail'?'mail_poll':'reconcile_hubspot';
@@ -87,7 +98,7 @@ export function jobStore(owner: TransactionDriver) {
     },
     claim(now: number) {
       return owner.transaction(async db => {
-        const r=await db.query<Job>(`WITH candidate AS (SELECT id,coalesce(attempts,0) AS previous_attempts FROM jobs WHERE NOT EXISTS(SELECT 1 FROM jobs busy WHERE busy.workspace_id=jobs.workspace_id AND busy.run_id=jobs.run_id AND busy.id<>jobs.id AND busy.kind='execute_approval_effect' AND jobs.kind='execute_approval_effect' AND busy.status='running' AND busy.locked_until>$1) AND kind IN ('process_event','analyse_deal','mail_poll','reconcile_hubspot','hubspot_keep_alive','execute_approval_effect') AND ((status IN ('queued','failed') AND coalesce(next_attempt_at,'epoch') <= $1) OR (status='running' AND locked_until <= $1)) ORDER BY next_attempt_at NULLS FIRST,id FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE jobs j SET status='running',attempts=least(coalesce(attempts,0)+1,5),locked_until=$2,lock_token=$3 FROM candidate c WHERE j.id=c.id RETURNING j.*,c.previous_attempts>=5 AS exhausted`,[new Date(now).toISOString(),new Date(now+120000).toISOString(),randomUUID()]);
+        const r=await db.query<Job>(`WITH candidate AS (SELECT id,coalesce(attempts,0) AS previous_attempts FROM jobs WHERE NOT EXISTS(SELECT 1 FROM jobs busy WHERE busy.workspace_id=jobs.workspace_id AND busy.run_id=jobs.run_id AND busy.id<>jobs.id AND busy.kind='execute_approval_effect' AND jobs.kind='execute_approval_effect' AND busy.status='running' AND busy.locked_until>$1) AND kind IN ('process_event','analyse_deal','mail_poll','reconcile_hubspot','hubspot_keep_alive','execute_approval_effect','monitor_workspace') AND ((status IN ('queued','failed') AND coalesce(next_attempt_at,'epoch') <= $1) OR (status='running' AND locked_until <= $1)) ORDER BY next_attempt_at NULLS FIRST,id FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE jobs j SET status='running',attempts=least(coalesce(attempts,0)+1,5),locked_until=$2,lock_token=$3 FROM candidate c WHERE j.id=c.id RETURNING j.*,c.previous_attempts>=5 AS exhausted`,[new Date(now).toISOString(),new Date(now+120000).toISOString(),randomUUID()]);
         const job=r.rows[0];
         if(job) await systemAudit(db,job.workspace_id,'system','job_claimed',job.id);
         return job;

@@ -1,4 +1,6 @@
 import 'server-only';
+import { monitorStore } from '../monitors/store';
+import { memoryStore } from '../memory/store';
 import { recoveryStore } from '../recovery/store';
 import { approvalStore } from '../approvals/store';
 import { scopeStore } from '../scope/store';
@@ -60,7 +62,7 @@ export function ownerServices(owner: TransactionDriver) {
     deleteSession: token => owner.transaction(async db => { await db.query('DELETE FROM sessions s USING workspaces w WHERE w.id=s.workspace_id AND coalesce(w.is_demo,false)=false AND session_token=$1', [token]); }),
   };
   return {
-    recovery: recoveryStore(owner), approvals: approvalStore(owner), scope: scopeStore(owner), demo: demoStore(owner), authAdapter, jobs: jobStore(owner), providers: systemProviders(owner),
+    monitors: monitorStore(owner), memory: memoryStore(owner), recovery: recoveryStore(owner), approvals: approvalStore(owner), scope: scopeStore(owner), demo: demoStore(owner), authAdapter, jobs: jobStore(owner), providers: systemProviders(owner),
     async sessionMember(token: string): Promise<Member | null> {
       return owner.transaction(async db => {
         const result = await db.query<Member & Record<string, unknown>>(`SELECT m.id,m.workspace_id,m.display_name,m.roles,m.client_company_id,false AS is_demo FROM sessions s JOIN members m ON m.user_id=s.user_id AND m.workspace_id=s.workspace_id JOIN workspaces w ON w.id=m.workspace_id WHERE s.session_token=$1 AND s.expires > now() AND m.archived_at IS NULL AND coalesce(w.is_demo,false)=false`, [token]);

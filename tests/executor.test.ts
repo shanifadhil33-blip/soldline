@@ -47,6 +47,7 @@ beforeAll(async()=>{
   database=await createDatabase();
   await database.db.query("INSERT INTO connections(workspace_id,provider,status,external_account_id,token_ciphertext) VALUES($1,'clickup','connected','team',$2),($1,'hubspot','connected','portal',$2)",[f.ws,encryptToken('fixture')]);
   await database.db.query("UPDATE connections SET external_account_id='omar@example.test',token_ciphertext=$2 WHERE workspace_id=$1 AND provider='mail'",[f.ws,encryptToken('fixture')]);
+  await database.db.query("UPDATE members SET display_name='Ravi',clickup_user_id='42' WHERE id=$1",[f.contributor]);
   approvals=approvalStore(database.db);jobs=jobStore(database.db);recovery=recoveryStore(database.db);
 },60000);
 afterAll(async()=>{await database?.db.close();vi.unstubAllEnvs();});
@@ -74,7 +75,7 @@ beforeEach(async()=>{
       if(timeoutCreate) {timeoutCreate=false;return HttpResponse.error();}
       return HttpResponse.json(row);
     }),
-    http.get('https://api.clickup.com/api/v2/task/:task',({params})=>HttpResponse.json(tasks.find(t=>t.id===params.task))),
+    http.get('https://api.clickup.com/api/v2/task/:task',({params})=>HttpResponse.json({...tasks.find(t=>t.id===params.task),last_editor:{id:42}})),
     http.put('https://api.clickup.com/api/v2/task/:task',({params})=>{const t=tasks.find(t=>t.id===params.task)!;t.archived=true;return HttpResponse.json(t);}),
     http.get('https://api.clickup.com/api/v2/list/:list',({params})=>HttpResponse.json(lists.find(t=>t.id===params.list))),
     http.put('https://api.clickup.com/api/v2/list/:list',({params})=>{const t=lists.find(t=>t.id===params.list)!;t.archived=true;return HttpResponse.json(t);}),
@@ -224,4 +225,14 @@ it('Absent HubSpot properties are stored as null before the approved write',asyn
 it('Successful retry closes recovery created by an expired fifth execution lease',async()=>{
   await create();const first=(await jobs.claim(Date.now()))!;await database.db.query("UPDATE jobs SET attempts=5,locked_until=now()-interval '1 minute' WHERE id=$1",[first.id]);const exhausted=(await jobs.claim(Date.now()))!;await jobs.finish(exhausted,false,Date.now());
   const row=(await rows<{id:string}>('SELECT id FROM recovery_items WHERE job_id=$1',[exhausted.id]))[0];expect((await recovery.act(admin,row.id,'retry_now')).status).toBe(200);expect((await tick()).error).toBeUndefined();expect(tasks).toHaveLength(8);expect((await rows<{status:string}>('SELECT status FROM recovery_items WHERE id=$1',[row.id]))[0].status).toBe('resolved');
+});
+
+it('Undo uses Someone when the task editor has no matching member',async()=>{
+  await create();await tick();tasks[0].date_updated='101';
+  server.use(http.get('https://api.clickup.com/api/v2/task/:task',({params})=>HttpResponse.json({...tasks.find(t=>t.id===params.task),last_editor:{id:999}})));
+  const undo=await recovery.undo(admin,run);const reversal=(undo as {approval:Approval}).approval;
+  expect((await approvals.decide(reversal.id,lead,'approve')).status).toBe(200);
+  expect((await approvals.execute(reversal.id,lead)).status).toBe(200);
+  await database.db.query("UPDATE jobs SET status='cancelled' WHERE run_id=$1 AND payload->>'approvalId'<>$2",[run,reversal.id]);
+  await tick();expect((await item()).plain_reason).toBe('Someone changed this task after it was created. Undo would lose that work.');
 });

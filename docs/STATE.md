@@ -46,9 +46,11 @@ Recovery routes support retry now, resolve with note, cancel remaining and recon
 
 P8 verification passes 469 tests across 25 files, including 33 new executor and recovery tests. The gate passes lint, types, all tests and the production build with exit code 0 using cached local font fixtures. See docs/P8.md for files created, every rule and its test, the marker self audit, queue choices, deviations and verification limits.
 
+P9 adds tick monitor jobs for missing inputs, client review, deadline risk, accepted commitments without an assigned task and quoted email scope requests. Findings keep one P8 recovery item per finding. Client reminders become exact irreversible approvals. Memory requires consent, repeated workspace records for company lessons, admin review, private personal context and visible Undo. The Memory page supports English and Arabic. Metrics use a SQL view over actual timestamps. Notifications cover assigned blocks and local daily digests while excluding the actor. The narrow undo fix resolves the actual ClickUp editor or assignee to a member name and uses Someone when no member matches. P9 verification passes 528 tests across 28 files. The gate passes lint, types, tests and the production build with exit code 0 using cached local font fixtures. See docs/P9.md for files, test names and the inherited scope write exception.
+
 ## Next
 
-P9. Continue from the verified executor, recovery and reversal flows. Keep using local fixtures until live service work is explicitly requested.
+P10. Continue from the background monitors, confirmed memory, metrics and notification records. Keep using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -75,6 +77,8 @@ Demo members have a null user link. A database trigger requires real members to 
 Contributor scope suggestions and client scope requests use an explicit intent and cannot become full proposals. Scope acceptance needs two distinct people with account manager and delivery lead roles, or admin and one of those roles. Each approver must separately pass the requester exclusion check. Agent requests carry the asking member through the same permissions module.
 
 ## Parked
+
+P9 proves that email and the new monitoring and memory paths do not change scope records. A global rule that every scope version write requires an executed scope change approval cannot yet be claimed: P6 still creates initial draft versions, and P8 leaves accepted scope mutations unsupported. This existing contract needs resolution before global enforcement. Task review history is measured from successful observations, and external tasks need confirmed scope links. Reminder recipients require a person to supply the exact address and wording. Company lessons all wait for admin review. Private staff performance lessons, a general conversation interface, notification screens and live subscriptions, whole app language switching and monthly interaction measurements remain parked. No simulated results are shown as real.
 
 P8 now executes provision, mail, recovery and reversal effects and claims execution jobs through P5. Scope acceptance mutations remain parked because their approved write contract is unspecified. Unsupported actions fail closed into recovery. The prior sandbox placeholders and run detail screen remain unverified. Mail Message ID mapping and sent search remain fixture contracts. Remote conditional writes and production concurrency remain unverified. P7 approval envelopes retain their existing keys while executable child records use the decided SHA256 keys. ClickUp events without a list id conservatively mark open list approvals stale across the workspace. Every caller must supply all input references on which the exact payload depends. Production concurrency and provider conditional write contracts remain unverified. Data can change after the live read, so P8 must recheck each real write. No integration or scope engine code was changed.
 

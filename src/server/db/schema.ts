@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, jsonb, bigserial, primaryKey, unique, uniqueIndex, index, check, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, time, jsonb, bigserial, primaryKey, unique, uniqueIndex, index, check, foreignKey } from 'drizzle-orm/pg-core';
 
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -9,6 +9,7 @@ export const workspaces = pgTable('workspaces', {
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   demo_expires_at: timestamp('demo_expires_at', { withTimezone: true, mode: 'string' }),
   timezone: text('timezone').default('Asia/Dubai'),
+  working_days: integer('working_days').array().notNull().default(sql`ARRAY[0,1,2,3,4]`),
   currency: text('currency').default('AED')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
   unique('workspaces_workspace_id_id').on(t.workspace_id, t.id),
@@ -79,6 +80,7 @@ export const members = pgTable('members', {
   user_id: uuid('user_id'),
   display_name: text('display_name').notNull(),
   preferred_name: text('preferred_name'),
+  digest_time: time('digest_time').notNull().default('09:00'),
   language: text('language', { enum: ['en', 'ar'] }),
   roles: text('roles').array().notNull(),
   client_company_id: uuid('client_company_id'),
@@ -259,6 +261,10 @@ export const deliverable_mappings = pgTable('deliverable_mappings', {
 ]);
 
 export const memories = pgTable('memories', {
+  deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+  confirmed_by: uuid('confirmed_by'),
+  revision: integer('revision').notNull().default(1),
+  history: jsonb('history').notNull().default([]),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   scope: text('scope', { enum: ['person', 'org'] }).notNull(),
@@ -306,6 +312,7 @@ export const runs = pgTable('runs', {
 ]);
 
 export const onboarding_inputs = pgTable('onboarding_inputs', {
+  blocking: boolean('blocking').notNull().default(false),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   run_id: uuid('run_id').notNull(),
@@ -325,6 +332,7 @@ export const onboarding_inputs = pgTable('onboarding_inputs', {
 ]);
 
 export const findings = pgTable('findings', {
+  monitor_key: text('monitor_key'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   run_id: uuid('run_id').notNull(),
@@ -548,6 +556,9 @@ export const agent_messages = pgTable('agent_messages', {
 ]);
 
 export const notifications = pgTable('notifications', {
+  dedupe_key: text('dedupe_key'),
+  actor_member_id: uuid('actor_member_id'),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   member_id: uuid('member_id').notNull(),
@@ -583,4 +594,21 @@ export const rate_buckets = pgTable('rate_buckets', {
   primaryKey({ columns: [t.provider, t.bucket_key] }),
   check('rate_buckets_provider_check', sql`${t.provider} in ('hubspot','clickup')`),
   check('rate_buckets_tokens_check', sql`${t.tokens} >= 0 and ${t.tokens} <= 100`),
+]);
+
+export const monitor_tasks = pgTable('monitor_tasks', {
+  workspace_id: uuid('workspace_id').notNull(),
+  run_id: uuid('run_id').notNull(),
+  task_id: text('task_id').notNull(),
+  status: text('status').notNull(),
+  review_since: timestamp('review_since', {withTimezone:true,mode:'string'}),
+  due_at: timestamp('due_at', {withTimezone:true,mode:'string'}),
+  scope_item_id: uuid('scope_item_id'),
+  assignee_ids: text('assignee_ids').array().notNull().default(sql`'{}'::text[]`),
+  closed: boolean('closed').notNull().default(false),
+  observed_at: timestamp('observed_at', {withTimezone:true,mode:'string'}).notNull(),
+}, t=>[
+  primaryKey({columns:[t.workspace_id,t.run_id,t.task_id]}),
+  foreignKey({columns:[t.workspace_id,t.run_id],foreignColumns:[runs.workspace_id,runs.id]}),
+  foreignKey({columns:[t.workspace_id,t.scope_item_id],foreignColumns:[scope_items.workspace_id,scope_items.id]}),
 ]);
