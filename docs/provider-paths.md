@@ -33,10 +33,10 @@ Defaults now in code: `HUBSPOT_CONFIRMED_PATHS` (src/server/integrations/hubspot
 | Create task | POST `/list/{id}/task` with markdown_content, time_estimate, tags | Live 200; the create response has NO markdown_description, read it back with `include_markdown_description=true` |
 | List tasks | GET `/list/{id}/task?include_markdown_description=true&subtasks=true&page=` | Live 200, `last_page` present |
 | Comment | POST `/task/{id}/comment` | Live 200; `id` is a NUMBER (entity schema already coerces) |
-| Update task status | PUT `/task/{id}` | Live 400 for "in progress": lists in "Client delivery" only have `to do` and `complete` |
+| Update task status | PUT `/task/{id}` | Live; space "Client delivery" (90149400327) now has `to do`, `in progress`, `client review` and `complete` (added in the browser Oct 18 2026; before that "in progress" returned 400) |
 | Delete task | DELETE `/task/{id}` | Live 204, empty body |
 | Webhook create, list, delete | POST `/team/{id}/webhook`, GET same, DELETE `/webhook/{id}` | Live 200; response `{id, webhook:{id, secret(64), health, ...}}` matches the code; test webhook deleted |
-| Folder templates | none in v2 (`/space/{id}/folder_template` 404); task templates list empty | Soldline creates folder and lists directly, no template or readiness polling needed |
+| Folder templates | Not used. Soldline creates the folder and lists directly, so no template readiness polling is needed. The workspace has no task templates (GET `/team/{id}/taskTemplate` empty) | Live |
 
 Space statuses needed by monitors: `to do`, `in progress`, `client review`, `complete`. ClickUp v2 has no endpoint to edit space statuses; add them once in the browser (Space settings, Statuses).
 
