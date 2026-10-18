@@ -3,7 +3,7 @@ Signed scope of work
 Growth retainer
 Monthly fee AED 18,000
 Client Karim Nasser
-Delivery lead Bilal
+Delivery lead Imran Shaikh
 Effective date 18 October 2026
 This sample agreement covers the deliverables on page 2.
 The client supplies access and brand materials before work begins.
@@ -23,9 +23,9 @@ All eight deliverables form the agreed scope.
 PAGE BREAK
 # Acceptance and signatures
 Karim Nasser approves the scope for Harbor Coffee Roasters.
-Bilal accepts delivery responsibility.
+Imran Shaikh accepts delivery responsibility.
 Client signature Karim Nasser
-Delivery signature Bilal
+Delivery signature Imran Shaikh
 Signed 18 October 2026
 This is a fictional signed sample for the Soldline demo.
 Changes require written approval from the client and delivery lead.

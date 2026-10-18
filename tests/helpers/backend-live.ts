@@ -6,7 +6,7 @@ type PathKey=typeof requiredPaths[number];
 const envValue=(env:Record<string,string|undefined>,key:string)=>{const value=env[key]?.trim();if(!value) throw new Error('Live setting is required: '+key);return value;};
 export function liveConfig(env:Record<string,string|undefined>) {
   if(env.LIVE_SANDBOX!=='1') throw new Error('Live sandbox mode is required');
-  if(env.LIVE_PATHS_CONFIRMED!=='yes') throw new Error('Bilal must confirm every provider path');
+  if(env.LIVE_PATHS_CONFIRMED!=='yes') throw new Error('Confirm every provider path with LIVE_PATHS_CONFIRMED=yes');
   const raw=JSON.parse(envValue(env,'LIVE_PROVIDER_PATHS')) as Record<string,unknown>;
   const paths={} as Record<PathKey,string>;
   const placeholders:Partial<Record<PathKey,string[]>>={hubspotDeal:['id'],hubspotDealCleanup:['id'],hubspotLineItemUpdate:['id'],hubspotFileSignedUrl:['id'],hubspotAssociation:['fromType','fromId','toType','toId'],clickupFolders:['space'],clickupFolderLists:['folder'],clickupListTasks:['list'],clickupTask:['task'],clickupFolderTasks:['folder'],clickupFolderCleanup:['folder'],mailInbox:['inbox'],mailMessages:['inbox'],mailMessage:['inbox','id'],mailThread:['inbox','id'],mailDrafts:['inbox'],mailSend:['inbox','id']};

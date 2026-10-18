@@ -245,8 +245,8 @@ it.each(requiredPaths)('Live preflight refuses an unset %s before any provider c
   const env=settings();const paths=JSON.parse(env.LIVE_PROVIDER_PATHS);delete paths[key];env.LIVE_PROVIDER_PATHS=JSON.stringify(paths);
   expect(()=>liveConfig(env)).toThrow('Live provider path needs confirmation: '+key);
 });
-it('Live preflight requires Bilal confirmation and refuses an unsafe path',()=>{
-  expect(()=>liveConfig({...settings(),LIVE_PATHS_CONFIRMED:''})).toThrow('Bilal must confirm');
+it('Live preflight requires explicit confirmation and refuses an unsafe path',()=>{
+  expect(()=>liveConfig({...settings(),LIVE_PATHS_CONFIRMED:''})).toThrow('Confirm every provider path');
   const env=settings();const paths=JSON.parse(env.LIVE_PROVIDER_PATHS);paths.hubspotDeal='//unconfirmed.example.test/{id}';
   expect(()=>liveConfig({...env,LIVE_PROVIDER_PATHS:JSON.stringify(paths)})).toThrow('Live provider path needs confirmation');
 });

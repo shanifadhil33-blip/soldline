@@ -83,7 +83,11 @@ export async function seedHubSpot(env: SeedEnv): Promise<Record<string, string>>
     await link('contacts', contact.id, 'companies', ids[company]);
   }
   const dealName = 'Harbor Coffee Roasters, growth retainer';
-  const deal = await ensure('deals', { dealname: dealName, amount: '18000', hs_currency_code: 'AED', dealstage: stage }, { dealname: dealName }); ids.deal = deal.id;
+  // The test portal only allows USD (deal_currency_code), so the seed sets no currency and the app shows amounts honestly.
+  const dealFields = { dealname: dealName, amount: '18000', dealstage: stage, soldline_delivery_status: 'Not started' };
+  const deal = await ensure('deals', dealFields, { dealname: dealName }); ids.deal = deal.id;
+  // A rerun resets the demo deal to its seed state, so every demo starts from Not started.
+  await request('PATCH', `${SEED_PATHS.objects}/deals/${encodeURIComponent(deal.id)}`, { properties: { dealstage: stage, soldline_delivery_status: 'Not started' } });
   await link('deals', deal.id, 'companies', ids['Harbor Coffee Roasters']);
   await link('deals', deal.id, 'contacts', ids.Karim);
   const items = [

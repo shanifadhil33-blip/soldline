@@ -30,7 +30,7 @@ it('Creates the sandbox folder and four lists once across repeated fixture runs'
 it('Creates companies, contacts, products, four line items and a scope note once in fixtures', async () => {
   const base = 'https://api.hubapi.com';
   const objects: Record<string, { id: string; properties: Record<string, string> }[]> = {};
-  let creates = 0, uploads = 0;
+  let creates = 0, uploads = 0, patches = 0;
   const associations = new Set<string>();
   const files: { id: string }[] = [];
   const env = { SEED_CONFIRM: 'yes', HUBSPOT_ACCESS_TOKEN: 'fake_secret', HUBSPOT_SEED_DEAL_STAGE: 'closedwon', HUBSPOT_FILES_SEARCH_PATH: '/fixtures/files/search', HUBSPOT_FILES_UPLOAD_PATH: '/fixtures/files', HUBSPOT_NOTES_SEARCH_PATH: '/crm/objects/2026-03/notes/search', HUBSPOT_NOTES_CREATE_PATH: '/crm/objects/2026-03/notes', HUBSPOT_ASSOCIATION_PATH: '/fixtures/associations/{fromType}/{fromId}/{toType}/{toId}' };
@@ -43,6 +43,10 @@ it('Creates companies, contacts, products, four line items and a scope note once
     http.post(`${base}/crm/objects/2026-03/:type`, async ({ params, request }) => {
       const type = String(params.type); objects[type] ??= [];
       const row = { id: String(++creates), ...await request.json() as { properties: Record<string, string> } }; objects[type].push(row); return HttpResponse.json(row);
+    }),
+    http.patch(`${base}/crm/objects/2026-03/deals/:id`, async ({ params, request }) => {
+      const row = objects.deals.find(d => d.id === params.id)!; patches++;
+      Object.assign(row.properties, (await request.json() as { properties: Record<string, string> }).properties); return HttpResponse.json(row);
     }),
     http.put(`${base}/fixtures/associations/:fromType/:fromId/:toType/:toId`, ({ request }) => { associations.add(request.url); return HttpResponse.json({}); }),
     http.get(`${base}/fixtures/files/search`, ({ request }) => { expect(new URL(request.url).searchParams.get('name')).toBe('harbor-scope'); return HttpResponse.json({ results: files }); }),
@@ -57,7 +61,9 @@ it('Creates companies, contacts, products, four line items and a scope note once
   expect(second).toEqual(first); expect(creates).toBe(14); expect(uploads).toBe(1); expect(associations.size).toBe(links);
   expect(objects.companies.map(c => c.properties.name)).toEqual(['Harbor Coffee Roasters','Cedar Line Furniture']);
   expect(objects.contacts.map(c => c.properties.firstname)).toEqual(['Karim','Laith']);
-  expect(objects.deals[0].properties).toMatchObject({ dealname: 'Harbor Coffee Roasters, growth retainer', amount: '18000', hs_currency_code: 'AED' });
+  expect(objects.deals[0].properties).toMatchObject({ dealname: 'Harbor Coffee Roasters, growth retainer', amount: '18000', dealstage: 'closedwon', soldline_delivery_status: 'Not started' });
+  expect(objects.deals[0].properties).not.toHaveProperty('hs_currency_code'); expect(objects.deals[0].properties).not.toHaveProperty('deal_currency_code');
+  expect(patches).toBe(2);
   expect(objects.line_items).toHaveLength(4); expect(objects.line_items.reduce((sum, item) => sum + Number(item.properties.quantity) * Number(item.properties.price), 0)).toBe(18000);
   expect(objects.notes[0].properties.hs_attachment_ids).toBe('file1');
 });
@@ -86,5 +92,5 @@ it('Provides a three page PDF with eight numbered deliverables on page two', asy
   expect(text[1]).toContain('Deliverables');
   for (const title of ['1 brand style refresh','2 website landing page','3 four blog posts a month','4 monthly SEO report','5 Meta ads setup','6 Google Ads setup','7 email newsletter template','8 monthly results dashboard']) expect(text[1]).toContain(title);
   expect(text.join(' ')).not.toMatch(/[-\u2013\u2014&]/);
-  expect(text[2]).toContain('Karim Nasser'); expect(text[2]).toContain('Bilal');
+  expect(text[2]).toContain('Karim Nasser'); expect(text[2]).toContain('Imran Shaikh'); expect(text.join(' ')).not.toContain('Bilal');
 });
