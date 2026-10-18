@@ -55,6 +55,8 @@ All member routes require a valid session or unexpired signed demo cookie. Datab
 | `GET /api/auth/[...nextauth]` | Auth.js validates the requested authentication operation | tests/auth-route.test.ts: Completes Google OAuth with MSW fixtures using the exported handlers and an original NextRequest |
 | `POST /api/auth/[...nextauth]` | Auth.js validates OAuth state and form protection | The same complete OAuth route test and tests/auth.test.ts session lifecycle tests |
 | `POST /api/demo/start` | Public, with a known persona; signed cookie permits sandbox reuse | Main walk; tests/demo.test.ts: Returns 200 for 50 rapid starts through the route directly |
+| `POST /api/sign-out` | Any visitor, same site only (Sec-Fetch-Site or Origin); deletes the Auth.js session, clears session and demo cookies, audit row sign_out when a member was signed in; 303 home for forms, JSON otherwise | tests/sign-out.test.ts |
+| `GET /api/sign-out` | Never signs out; 405 with a plain message | tests/sign-out.test.ts |
 | `POST /api/webhooks/hubspot` | Valid HubSpot signature, timestamp and configured portal | Both walks; tests/system-routes.test.ts: Webhook invalid signatures never query the event store or register a worker |
 | `POST /api/webhooks/clickup` | Valid MAC from an encrypted configured webhook secret and matching webhook id | tests/events-jobs.test.ts: Verifies ClickUp before JSON parsing and deduplicates each history item; Refuses a ClickUp body with a different webhook id even when another stored secret signed it |
 | `POST /api/jobs/tick` | Exact configured tick bearer | Both walks; tests/system-routes.test.ts: Tick without bearer returns 401 before constructing database services |

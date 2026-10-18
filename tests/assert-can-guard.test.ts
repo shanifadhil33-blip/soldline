@@ -6,6 +6,8 @@ const mutations = new Set(['POST','PUT','PATCH','DELETE']);
 const exceptions = new Map([
   ['src/app/api/auth/[...nextauth]/route.ts', 'Auth.js owns OAuth validation'],
   ['src/app/api/demo/start/route.ts', 'public demo creation has no member yet'],
+  ['src/app/api/sign-out/route.ts', 'signing out needs no permission, only a same site POST'],
+  ['src/server/sign-out.ts', 'signing out needs no permission, only a same site POST'],
 ]);
 function guarded(text: string, file: string): boolean {
   const source = parseSource(text, file);
