@@ -1,5 +1,7 @@
 /** A connection reserved for one transaction. Both Pool clients and PGlite fit this interface. */
 export interface SqlConnection {
+  /** Ordered rows preserve repeated column names in Auth.js joins. */
+  queryArrays?(sql: string, params?: unknown[]): Promise<{ rows: unknown[][] }>;
   query<T extends Record<string, unknown> = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
 }
 export interface TransactionDriver {

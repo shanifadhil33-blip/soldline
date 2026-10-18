@@ -17,7 +17,7 @@ export async function createDatabase() {
       const keys = Object.keys(values);
       await db.query(`INSERT INTO ${table} (${keys.map(k => `"${k}"`).join(',')}) VALUES (${keys.map((_,i) => `$${i+1}`).join(',')})`, Object.values(values));
     }
-    await insert('workspaces', { id: f.ws, name: 'Demo', is_demo: true });
+    await insert('workspaces', { id: f.ws, name: 'Fixture workspace', is_demo: false });
     for (const company of [f.companyA, f.companyB]) await insert('client_companies', { id: company, name: 'Client' });
     for (let n = 0; n < 7; n++) {
       await insert('users', { id: id(group,100+n), name: 'Adhil', email: `adhil${group}${n}@example.test` });

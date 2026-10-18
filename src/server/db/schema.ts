@@ -6,6 +6,7 @@ export const workspaces = pgTable('workspaces', {
   workspace_id: uuid('workspace_id').notNull(),
   name: text('name').notNull(),
   is_demo: boolean('is_demo'),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   demo_expires_at: timestamp('demo_expires_at', { withTimezone: true, mode: 'string' }),
   timezone: text('timezone').default('Asia/Dubai'),
   currency: text('currency').default('AED')
@@ -75,7 +76,7 @@ export const verification_tokens = pgTable('verification_tokens', {
 export const members = pgTable('members', {
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
-  user_id: uuid('user_id').notNull(),
+  user_id: uuid('user_id'),
   display_name: text('display_name').notNull(),
   preferred_name: text('preferred_name'),
   language: text('language', { enum: ['en', 'ar'] }),

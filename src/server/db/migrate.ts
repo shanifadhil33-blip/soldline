@@ -6,6 +6,7 @@ import type { TransactionDriver } from './withMember';
 /** The owner connection is used only for migrations. No connection is opened here. */
 export async function migrate(driver: TransactionDriver, root = join(process.cwd(), 'drizzle')) {
   const generated = (await readdir(root)).filter((name) => name.endsWith('.sql')).sort();
+  // Sorted manual files apply 0003_writes.sql after 0002_audit.sql.
   const manual = (await readdir(join(root, 'sql'))).filter((name) => name.endsWith('.sql')).sort().map((name) => join('sql', name));
   await driver.transaction(async (db) => {
     await db.query('SELECT pg_advisory_xact_lock(710182026)');
