@@ -35,5 +35,12 @@ export class ClickUpClient {
     if (!id) throw new Error('Provider response is incomplete');
     return { id, secret_ciphertext: await this.connections.saveWebhookSecret(id, result.webhook.secret) };
   }
-  listMembers(teamId: string) { return this.http.request('GET', `${CLICKUP_PATHS.team}/${segment(teamId)}/member`, z.object({ members: z.array(z.object({ user: z.object({ id: z.number(), username: z.string().optional(), email: z.email().optional() }) })) })); }
+  // Confirmed live Oct 18 2026: GET /team/{id}/member is 404; members come with GET /team.
+  async listMembers(teamId: string) {
+    const member = z.object({ user: z.object({ id: z.number(), username: z.string().nullable().optional(), email: z.email().optional() }) });
+    const result = await this.http.request('GET', CLICKUP_PATHS.team, z.object({ teams: z.array(z.object({ id: z.union([z.string(), z.number()]).transform(String), members: z.array(member).default([]) })) }));
+    const team = result.teams.find(t => t.id === String(teamId));
+    if (!team) throw new Error('Provider response is incomplete');
+    return { members: team.members };
+  }
 }

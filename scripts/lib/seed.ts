@@ -2,12 +2,19 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 export type SeedEnv = Record<string, string | undefined>;
 export interface SeedEntity { id: string; name?: string; properties?: Record<string, string> }
-// Unknown HubSpot endpoints have no live default. Bilal supplies confirmed paths.
+// HubSpot seed paths confirmed against the live test portal and the 2026-03 reference on Oct 18 2026
+// (docs/provider-paths.md). A process setting with the same name still overrides each default.
 export const SEED_PATHS = {
   hubspot: 'https://api.hubapi.com', clickup: 'https://api.clickup.com/api/v2',
-  objects: '/crm/objects/2026-03', filesSearch: undefined, filesUpload: undefined,
-  notesSearch: undefined, notesCreate: undefined, association: undefined,
+  objects: '/crm/objects/2026-03', filesSearch: '/files/2026-03/files/search', filesUpload: '/files/2026-03/files',
+  notesSearch: '/crm/objects/2026-03/notes/search', notesCreate: '/crm/objects/2026-03/notes',
+  association: '/crm/objects/2026-03/{fromType}/{fromId}/associations/default/{toType}/{toId}',
 } as const;
+const seedDefaults: Record<string, string> = {
+  HUBSPOT_FILES_SEARCH_PATH: SEED_PATHS.filesSearch, HUBSPOT_FILES_UPLOAD_PATH: SEED_PATHS.filesUpload,
+  HUBSPOT_NOTES_SEARCH_PATH: SEED_PATHS.notesSearch, HUBSPOT_NOTES_CREATE_PATH: SEED_PATHS.notesCreate,
+  HUBSPOT_ASSOCIATION_PATH: SEED_PATHS.association,
+};
 export function requireSeed(env: SeedEnv, provider: 'HUBSPOT' | 'CLICKUP'): string {
   if (env.SEED_CONFIRM !== 'yes') throw new Error('Set SEED_CONFIRM to yes before running this script');
   const token = env[`${provider}_ACCESS_TOKEN`];
@@ -15,7 +22,7 @@ export function requireSeed(env: SeedEnv, provider: 'HUBSPOT' | 'CLICKUP'): stri
   return token;
 }
 function confirmed(env: SeedEnv, name: string): string {
-  const path = env[name];
+  const path = env[name] ?? seedDefaults[name];
   if (!path || !path.startsWith('/') || path.startsWith('//') || /[?#]/.test(path)) throw new Error(`Confirm ${name} before running this script`);
   return path;
 }
@@ -92,7 +99,7 @@ export async function seedHubSpot(env: SeedEnv): Promise<Record<string, string>>
     ids[`Line item ${item.name}`] = line.id; await link('deals', deal.id, 'line_items', line.id);
   }
   const filename = 'harbor-scope.pdf';
-  const files = await request<{ results: SeedEntity[] }>('GET', filesSearch + '?' + new URLSearchParams({ name: filename }));
+  const files = await request<{ results: SeedEntity[] }>('GET', filesSearch + '?' + new URLSearchParams({ name: filename.replace(/\.pdf$/, '') }));
   let file = files.results[0];
   if (!file) {
     const pdf = await readFile(new URL('../../tests/fixtures/harbor-scope.pdf', import.meta.url));

@@ -25,6 +25,6 @@ export async function POST(request:Request) {
   const result=await response.json();
   const audit=await getOwnerServices().trust.audit(member);
   const row=audit.rows?.find(row=>!previous.has(String(row.id))&&row.action==='approve_plan'&&row.outcome==='denied'&&row.target_id===id);
-  if(!row)return Response.json({},{status:500});
+  if(!row)return Response.json({message:'The refusal was saved, but it is not in the history you can see. Ask an admin to check History.'},{status:409});
   return Response.json({request:{method:'POST',path},status:response.status,message:result.message,row});
 }

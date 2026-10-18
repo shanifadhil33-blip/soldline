@@ -8,6 +8,12 @@ export const HUBSPOT_PATHS = {
   notes: undefined, owners: undefined, fileSignedUrl: undefined,
 } as const;
 export interface HubSpotPaths { notes?: string; owners?: string; fileSignedUrl?: (id: string) => string }
+// Confirmed against the live test portal and the 2026-03 reference on Oct 18 2026 (docs/provider-paths.md).
+export const HUBSPOT_CONFIRMED_PATHS: HubSpotPaths = {
+  notes: '/crm/objects/2026-03/notes/batch/read',
+  owners: '/crm/owners/2026-03',
+  fileSignedUrl: (id: string) => `/files/2026-03/files/${id}/signed-url`,
+};
 export const crmObject = z.object({ id: z.string(), properties: z.record(z.string(), z.string().nullable()), associations: z.record(z.string(), z.object({ results: z.array(z.object({ id: z.string(), type: z.string().optional() })) })).optional() });
 export const crmPage = z.object({ results: z.array(crmObject), paging: z.object({ next: z.object({ after: z.string() }) }).optional() });
 export type CrmObject = z.infer<typeof crmObject>;
@@ -16,7 +22,7 @@ export interface ApprovedDeal { modifiedAt: string; properties: Partial<Record<k
 const dealProperties = 'dealname,dealstage,amount,closedate,hubspot_owner_id,hs_lastmodifieddate,soldline_delivery_status,soldline_plan_url,soldline_run_ref';
 export class HubSpotClient {
   private readonly http: Transport;
-  constructor(options: TransportOptions, private readonly paths: HubSpotPaths = {}) { this.http = new Transport('hubspot', 'https://api.hubapi.com', options); }
+  constructor(options: TransportOptions, private readonly paths: HubSpotPaths = HUBSPOT_CONFIRMED_PATHS) { this.http = new Transport('hubspot', 'https://api.hubapi.com', options); }
   getDeal(id: string) { return this.http.request('GET', `${HUBSPOT_PATHS.deals}/${segment(id)}?properties=${dealProperties}&associations=line_items,companies,contacts,notes`, crmObject); }
   searchDealsModifiedSince(cursor: string, after?: string) {
     return this.http.request('POST', HUBSPOT_PATHS.search, crmPage, { filterGroups: [{ filters: [{ propertyName: 'hs_lastmodifieddate', operator: 'GTE', value: cursor }] }], properties: dealProperties.split(','), limit: 100, ...(after ? { after } : {}) });

@@ -103,7 +103,7 @@ P5 needs deployment settings before external scheduling: TICK_URL and TICK_SECRE
 P6 verified unpdf with Node v22.23.3 by putting the supplied local runtime first on PATH for every shell command. Production webhook response latency and database concurrency across separate connections remain unverified locally.
 
 
-UNVERIFIED mail paths below require confirmation against the live inbox API before live use. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
+Mail paths below match the AgentMail OpenAPI (checked Oct 18 2026) but the team inbox adhil+bilal@mail.grokbot.com is a Grok Bot native inbox with no API key, so they cannot run live; see docs/provider-paths.md and fix-plan A2. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
 
 `GET /inboxes/{inbox}`
 
@@ -117,9 +117,9 @@ UNVERIFIED mail paths below require confirmation against the live inbox API befo
 
 `POST /inboxes/{inbox}/drafts/{id}/send`
 
-TODO UNVERIFIED HubSpot owners, notes batch read and Files signed URL paths have no default. The HUBSPOT_PATHS block reserves them as undefined. Confirm the 2026 March reference and supply explicit paths before live use. Association pagination and association paths also need confirmation. All provided deal and line item methods use the supplied 2026 March paths.
+CONFIRMED Oct 18 2026 (Bilal, live): HubSpot owners, notes batch read, file signed URL, file search and upload, object search and association label paths (association create from the 2026-03 reference). Defaults live in HUBSPOT_CONFIRMED_PATHS and SEED_PATHS. See docs/provider-paths.md. The HubSpot service key still lacks write scopes for companies, contacts, line items, notes and the e-commerce scope for products, so the HubSpot seed cannot run yet.
 
-TODO UNVERIFIED seed paths for company, contact, product and line item search and create follow `/crm/objects/2026-03/{type}` and `/crm/objects/2026-03/{type}/search`. Confirm these before a sandbox run. Notes search, notes create, file search, file upload and the association URL template require explicit process settings and have no guessed default. Confirm their response shapes, supported search filters and multipart fields too. The single SEED_PATHS block holds the base paths and unknown slots. See docs/P4.md for settings. The sandbox deal stage must be supplied explicitly.
+Seed paths: confirmed, see docs/provider-paths.md. ClickUp seed ran live Oct 18 2026: folder Retainer onboarding 901414513961, lists Setup 901422397743, Content 901422397744, Ads 901422397745, Reporting 901422397746 in space Client delivery 90149400327; a rerun returned the same ids. HubSpot seed file uploaded: harbor-scope 412301100775 (/Soldline, private). The sandbox deal stage is closedwon.
 
 MAIL_API_BASE defaults to `https://api.agentmail.to/v0`. MAIL_API_KEY supplies Bearer authentication and MAIL_INBOX_ADDRESS identifies `adhil+bilal@mail.grokbot.com`. Explicit admin setup encrypts the key before client use. TOKEN_ENC_KEY must be exactly 32 bytes encoded as base64. No environment file was opened or edited. Adding MAIL_API_BASE to the example file remains outside the shared boundary on environment files.
 

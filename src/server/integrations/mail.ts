@@ -1,7 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import { Transport, type TransportOptions, segment } from './transport';
-// UNVERIFIED. Confirm all paths against the live inbox API before P8.
+// Paths match the AgentMail OpenAPI (Oct 18 2026). No live inbox key yet: see docs/provider-paths.md.
 export const MAIL_PATHS = {
   inbox: (inbox: string) => `/inboxes/${segment(inbox)}`,
   messages: (inbox: string) => `/inboxes/${segment(inbox)}/messages`,

@@ -83,8 +83,12 @@ it('Reads owners through an explicitly configured path', async () => {
   respond('get', `${hub}/fixtures/owners`, { results: [{ id: 'owner1', email: 'bilal@example.test' }] }, request => { expect(new URL(request.url).searchParams.get('after')).toBe('next'); });
   expect((await hubspot.getOwners('next')).results[0].email).toBe('bilal@example.test');
 });
+it('Uses the confirmed HubSpot paths by default', async () => {
+  respond('get', `${hub}/crm/owners/2026-03`, { results: [{ id: '1', email: 'owner@example.test' }] });
+  expect((await new HubSpotClient({ connections }).getOwners()).results[0].email).toBe('owner@example.test');
+});
 it('Refuses unknown HubSpot paths without making requests', async () => {
-  const client = new HubSpotClient({ connections });
+  const client = new HubSpotClient({ connections }, {});
   await expect(client.listDealNotes('deal1')).rejects.toThrow('Provider path needs confirmation');
   expect(() => client.getOwners()).toThrow('Provider path needs confirmation');
   expect(() => client.getFileSignedUrl('file1')).toThrow('Provider path needs confirmation');
@@ -118,7 +122,7 @@ it('Creates a webhook and stores its secret encrypted by webhook id', async () =
   const rows = await ctx.db.query<{ webhook_secrets: Record<string, string> }>("SELECT webhook_secrets FROM connections WHERE workspace_id=$1 AND provider='clickup'", [a.ws]);
   expect(decryptToken(rows.rows[0].webhook_secrets.webhook1, key)).toBe('webhook_secret');
 });
-it('Lists members for owner mapping', async () => { respond('get', `${click}/team/team1/member`, { members: [{ user: { id: 123, username: 'Bilal', email: 'bilal@example.test' } }] }); expect((await clickup.listMembers('team1')).members[0].user.username).toBe('Bilal'); });
+it('Lists members for owner mapping', async () => { respond('get', `${click}/team`, { teams: [{ id: 'team1', members: [{ user: { id: 123, username: 'Bilal', email: 'bilal@example.test' } }] }] }); expect((await clickup.listMembers('team1')).members[0].user.username).toBe('Bilal'); });
 it('Reads the team inbox', async () => { respond('get', mailPath, { inbox_id: inboxAddress }); expect((await mail.getInbox()).inbox_id).toBe(inboxAddress); });
 it('Lists messages since a cursor', async () => { respond('get', `${mailPath}/messages`, { messages: [message], next_page_token: 'next' }, r => { expect(new URL(r.url).searchParams.get('after')).toBe('cursor1'); }); expect((await mail.listMessagesSince('cursor1')).next_page_token).toBe('next'); });
 it('Reads one message', async () => { respond('get', `${mailPath}/messages/message1`, message); expect(await mail.getMessage('message1')).toEqual(message); });

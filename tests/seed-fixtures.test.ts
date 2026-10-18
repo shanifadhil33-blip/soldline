@@ -9,7 +9,8 @@ it('Requires explicit confirmation and a process token before any request', asyn
   expect(() => requireSeed({}, 'HUBSPOT')).toThrow('Set SEED_CONFIRM');
   await expect(seedClickUp({ SEED_CONFIRM: 'no', CLICKUP_ACCESS_TOKEN: 'fake' })).rejects.toThrow('Set SEED_CONFIRM');
   await expect(seedHubSpot({ SEED_CONFIRM: 'yes' })).rejects.toThrow('Provider access token is required');
-  await expect(seedHubSpot({ SEED_CONFIRM: 'yes', HUBSPOT_ACCESS_TOKEN: 'fake' })).rejects.toThrow('Confirm HUBSPOT_FILES_SEARCH_PATH');
+  await expect(seedHubSpot({ SEED_CONFIRM: 'yes', HUBSPOT_ACCESS_TOKEN: 'fake' })).rejects.toThrow('Sandbox deal stage is required');
+  await expect(seedHubSpot({ SEED_CONFIRM: 'yes', HUBSPOT_ACCESS_TOKEN: 'fake', HUBSPOT_FILES_SEARCH_PATH: 'https://elsewhere.test/x' })).rejects.toThrow('Confirm HUBSPOT_FILES_SEARCH_PATH');
 });
 it('Creates the sandbox folder and four lists once across repeated fixture runs', async () => {
   const folders: { id: string; name: string }[] = [], lists: { id: string; name: string }[] = [];
@@ -44,7 +45,7 @@ it('Creates companies, contacts, products, four line items and a scope note once
       const row = { id: String(++creates), ...await request.json() as { properties: Record<string, string> } }; objects[type].push(row); return HttpResponse.json(row);
     }),
     http.put(`${base}/fixtures/associations/:fromType/:fromId/:toType/:toId`, ({ request }) => { associations.add(request.url); return HttpResponse.json({}); }),
-    http.get(`${base}/fixtures/files/search`, ({ request }) => { expect(new URL(request.url).searchParams.get('name')).toBe('harbor-scope.pdf'); return HttpResponse.json({ results: files }); }),
+    http.get(`${base}/fixtures/files/search`, ({ request }) => { expect(new URL(request.url).searchParams.get('name')).toBe('harbor-scope'); return HttpResponse.json({ results: files }); }),
     http.post(`${base}/fixtures/files`, async ({ request }) => {
       const form = await request.formData(); const file = form.get('file') as File;
       expect(file.type).toBe('application/pdf'); expect(file.size).toBeGreaterThan(1000);

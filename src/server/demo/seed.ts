@@ -34,10 +34,12 @@ export async function seedSandbox(db: SqlConnection, ws: string, expiry: Date) {
   await insert('scope_versions', { id: version, deal_id: deal, version: 1, status: 'accepted', source_document_id: document });
   for (let i = 0; i < scopeTitles.length; i++) await insert('scope_items', { scope_version_id: version, key: String(i + 1), title: scopeTitles[i], quantity: i === 2 ? 4 : 1, cadence: [2, 3, 7].includes(i) ? 'monthly' : 'once', source_page: Math.min(3, 1 + Math.floor(i / 3)) });
   for (const name of ['Blog posts', 'SEO report', 'Meta ads setup', 'Results dashboard']) await insert('line_items', { deal_id: deal, name });
-  await insert('runs', { id: run, deal_id: deal, run_key: `sample_${run}`, status: 'waiting_approval', scope_version_id: version, plan: JSON.stringify({ label: 'Sample data' }) });
+  // Every sample run has a delivery lead (Imran) and a won date, so each role sees its own work.
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+  await insert('runs', { id: run, deal_id: deal, run_key: `sample_${run}`, status: 'waiting_approval', scope_version_id: version, plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.imran, won_at: daysAgo(2) });
   for (const label of inputTitles) await insert('onboarding_inputs', { run_id: run, key: label.toLowerCase().replaceAll(' ', '_'), label, status: 'missing' });
   await insert('findings', { run_id: run, kind: 'scope_mismatch', title: 'Four promised deliverables are missing from the CRM package', owner_member_id: ids.ravi });
   const cedarDeal = randomUUID();
   await insert('deals', { id: cedarDeal, client_company_id: cedar, hubspot_deal_id: `sample_${cedarDeal}`, name: 'Cedar Line Furniture', owner_member_id: ids.omar });
-  await insert('runs', { deal_id: cedarDeal, run_key: `sample_${cedarDeal}`, status: 'received', plan: JSON.stringify({ label: 'Sample data' }) });
+  await insert('runs', { deal_id: cedarDeal, run_key: `sample_${cedarDeal}`, status: 'received', plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.imran, won_at: daysAgo(0.2) });
 }
