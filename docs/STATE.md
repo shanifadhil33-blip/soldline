@@ -20,9 +20,19 @@ The seed entry scripts require SEED_CONFIRM=yes and process credentials. Their s
 
 P4 verification passes 290 tests across 18 files. The full gate passes lint, types, tests and production build with exit code 0 using local cached font fixtures. See docs/P4.md for files and verification limits.
 
+P5 adds signed HubSpot and ClickUp webhooks, durable event receipts, dedupe, replay and a leased job queue. HubSpot signatures cover the method, full URI, raw body and timestamp with a five minute window. ClickUp verifies the raw body against encrypted secrets before parsing JSON. Invalid signatures cannot create events or jobs. The webhook response registers the worker through after once the receipt commits.
+
+Won stage changes enqueue one analyse job per deal. Run keys include the deal and scope hash, and conflicting inserts return the existing run. Missing local deals are imported through the provider fixture contract. Runs record their delivery lead and a plus address when a mail inbox is configured. Runs stay received for P6 analysis.
+
+Jobs claim through FOR UPDATE SKIP LOCKED with two minute leases and completion tokens. Five attempts use the decided backoff and then create one recovery item. Expired fifth leases go directly to recovery. Tick requires its bearer secret, queues each connected mail inbox and HubSpot connection by five minute bucket, and processes at most twenty jobs within a shared request time budget. Worker HTTP reads abort at that deadline. Mail cursors belong to connections and unrelated messages are never stored. Reconciliation commits its cursor only after all pages succeed.
+
+Replay uses the stored raw event and the same event handler with replay provenance in audit details. Admins and delivery leads may replay, and demo Omar is also allowed. Replaying a completed won event returns zero new actions. System work uses private named owner operations and a separate audit append that the app role cannot execute. Actor types are webhook, schedule or system.
+
+The GitHub tick workflow and the Vercel daily cron are present. Daily queues reconciliation and a HubSpot search for keep alive. P5 verification passes 333 tests across 20 files. The final gate passes lint, types, tests and production build with exit code 0. See docs/P5.md for files, signature proof, setup and verification limits.
+
 ## Next
 
-P5 event ingestion and reconciliation. Continue using local fixtures until live service work is explicitly requested.
+P6 scope document parsing and analysis. Continue using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -49,6 +59,11 @@ Demo members have a null user link. A database trigger requires real members to 
 Contributor scope suggestions and client scope requests use an explicit intent and cannot become full proposals. Scope acceptance needs two distinct people with account manager and delivery lead roles, or admin and one of those roles. Each approver must separately pass the requester exclusion check. Agent requests carry the asking member through the same permissions module.
 
 ## Parked
+
+P5 needs deployment settings before external scheduling: TICK_URL and TICK_SECRET in GitHub secrets, TICK_SECRET on the app, and CRON_SECRET for the daily Vercel bearer. HUBSPOT_APP_CLIENT_SECRET must match the webhook app. Each HubSpot connection needs won_stage_id and should name delivery_lead_id. These were not configured remotely. The requested unit tests skill is absent, so P5 used the existing Vitest, MSW and PGlite setup directly.
+
+The current shell still reports Node 20.19.2 on PATH despite the P5 runtime note naming Node 22.23. No runtime installation or PATH change was made. P6 must verify unpdf with the intended runtime. Production webhook response latency and database concurrency across separate connections remain unverified locally.
+
 
 UNVERIFIED mail paths below all require confirmation against the live inbox API before P8. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
 

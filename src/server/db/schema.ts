@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, jsonb, bigserial, primaryKey, unique, check, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, jsonb, bigserial, primaryKey, unique, uniqueIndex, index, check, foreignKey } from 'drizzle-orm/pg-core';
 
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -120,9 +120,13 @@ export const connections = pgTable('connections', {
   last_ok_at: timestamp('last_ok_at', { withTimezone: true, mode: 'string' }),
   last_error_code: text('last_error_code'),
   webhook_secrets: jsonb('webhook_secrets').notNull().default({}),
+  poll_cursor: text('poll_cursor'),
+  won_stage_id: text('won_stage_id'),
+  delivery_lead_id: uuid('delivery_lead_id'),
   allowed_actions: jsonb('allowed_actions')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
   unique('connections_workspace_provider').on(t.workspace_id, t.provider),
+  foreignKey({ columns: [t.workspace_id,t.delivery_lead_id], foreignColumns: [members.workspace_id,members.id] }),
   check('connections_provider_check', sql`${t.provider} in ('hubspot', 'clickup', 'mail')`),
   check('connections_status_check', sql`${t.status} in ('connected', 'needs_reconnect', 'paused', 'revoked')`),
   unique('connections_workspace_id_id').on(t.workspace_id, t.id),
@@ -269,6 +273,9 @@ export const memories = pgTable('memories', {
 ]);
 
 export const runs = pgTable('runs', {
+  delivery_lead_id: uuid('delivery_lead_id'),
+  plus_address: text('plus_address'),
+  mail_thread_ids: text('mail_thread_ids').array().notNull().default(sql`'{}'::text[]`),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   deal_id: uuid('deal_id').notNull(),
@@ -285,6 +292,7 @@ export const runs = pgTable('runs', {
   check('runs_status_check', sql`${t.status} in ('received', 'analysing', 'blocked', 'waiting_approval', 'executing', 'partly_done', 'ready', 'in_delivery', 'paused', 'cancelled')`),
   unique('runs_workspace_id_id').on(t.workspace_id, t.id),
   unique('runs_run_key_unique').on(t.workspace_id, t.run_key),
+  foreignKey({ columns: [t.workspace_id,t.delivery_lead_id], foreignColumns: [members.workspace_id,members.id] }),
   foreignKey({ columns: [t.workspace_id, t.deal_id], foreignColumns: [deals.workspace_id, deals.id] }),
   foreignKey({ columns: [t.workspace_id, t.trigger_event_id], foreignColumns: [inbound_events.workspace_id, inbound_events.id] }),
   foreignKey({ columns: [t.workspace_id, t.scope_version_id], foreignColumns: [scope_versions.workspace_id, scope_versions.id] }),
@@ -396,6 +404,7 @@ export const external_effects = pgTable('external_effects', {
 ]);
 
 export const inbound_events = pgTable('inbound_events', {
+  run_id: uuid('run_id'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   source: text('source', { enum: ['hubspot', 'clickup', 'mail', 'replay'] }).notNull(),
@@ -413,10 +422,12 @@ export const inbound_events = pgTable('inbound_events', {
   check('inbound_events_received_via_check', sql`${t.received_via} in ('webhook', 'reconcile', 'poll', 'replay')`),
   unique('inbound_events_workspace_id_id').on(t.workspace_id, t.id),
   unique('inbound_events_dedupe_key_unique').on(t.workspace_id, t.dedupe_key),
+  foreignKey({ columns: [t.workspace_id,t.run_id], foreignColumns: [runs.workspace_id,runs.id] }),
   foreignKey({ columns: [t.workspace_id], foreignColumns: [workspaces.id] })
 ]);
 
 export const jobs = pgTable('jobs', {
+  lock_token: uuid('lock_token'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   kind: text('kind'),
@@ -433,6 +444,7 @@ export const jobs = pgTable('jobs', {
   check('jobs_status_check', sql`${t.status} in ('queued', 'running', 'done', 'failed', 'dead')`),
   unique('jobs_workspace_id_id').on(t.workspace_id, t.id),
   unique('jobs_dedupe_key_unique').on(t.workspace_id, t.dedupe_key),
+  index('jobs_ready').on(t.next_attempt_at).where(sql`${t.status} in ('queued','running','failed')`),
   foreignKey({ columns: [t.workspace_id, t.run_id], foreignColumns: [runs.workspace_id, runs.id] }),
   foreignKey({ columns: [t.workspace_id], foreignColumns: [workspaces.id] })
 ]);
@@ -440,7 +452,7 @@ export const jobs = pgTable('jobs', {
 export const recovery_items = pgTable('recovery_items', {
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
-  run_id: uuid('run_id').notNull(),
+  run_id: uuid('run_id'),
   job_id: uuid('job_id'),
   effect_id: uuid('effect_id'),
   finding_id: uuid('finding_id'),
@@ -456,6 +468,7 @@ export const recovery_items = pgTable('recovery_items', {
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
   check('recovery_items_status_check', sql`${t.status} in ('open', 'retrying', 'resolved', 'cancelled')`),
   unique('recovery_items_workspace_id_id').on(t.workspace_id, t.id),
+  uniqueIndex('recovery_one_per_job').on(t.workspace_id,t.job_id).where(sql`${t.job_id} is not null`),
   foreignKey({ columns: [t.workspace_id, t.run_id], foreignColumns: [runs.workspace_id, runs.id] }),
   foreignKey({ columns: [t.workspace_id, t.job_id], foreignColumns: [jobs.workspace_id, jobs.id] }),
   foreignKey({ columns: [t.workspace_id, t.effect_id], foreignColumns: [external_effects.workspace_id, external_effects.id] }),

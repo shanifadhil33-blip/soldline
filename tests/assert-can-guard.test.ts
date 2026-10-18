@@ -13,7 +13,7 @@ function guarded(text: string, file: string): boolean {
   for (const node of source.statements) if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier) && node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
     for (const item of node.importClause.namedBindings.elements) {
       const name = item.propertyName?.text ?? item.name.text;
-      if ((name === 'withMemberRoute' && /(?:server\/|\.\/)http$/.test(node.moduleSpecifier.text)) || (name === 'assertCan' && /(?:server\/|\.\/)permissions$/.test(node.moduleSpecifier.text))) imports.set(item.name.text, name);
+      if ((name === 'withMemberRoute' && /(?:server\/|\.\/)http$/.test(node.moduleSpecifier.text)) || (name === 'assertCan' && /(?:server\/|\.\/)permissions$/.test(node.moduleSpecifier.text)) || (name === 'withSystemRoute' && /server\/events\/http$/.test(node.moduleSpecifier.text))) imports.set(item.name.text, name);
     }
   }
   let hasMutation = false;
@@ -40,7 +40,7 @@ function guarded(text: string, file: string): boolean {
       const names = ts.isIdentifier(declaration.name) ? [declaration.name.text] : declaration.name.elements.flatMap(item => ts.isBindingElement(item) ? [item.name.getText(source)] : []);
       if (!serverFile && !names.some(name => mutations.has(name))) continue;
       hasMutation = true;
-      guardedExports.push(!!declaration.initializer && ((ts.isCallExpression(declaration.initializer) && ts.isIdentifier(declaration.initializer.expression) && imports.get(declaration.initializer.expression.text) === 'withMemberRoute') || calls(declaration.initializer, 'assertCan')));
+      guardedExports.push(!!declaration.initializer && ((ts.isCallExpression(declaration.initializer) && ts.isIdentifier(declaration.initializer.expression) && (imports.get(declaration.initializer.expression.text) === 'withMemberRoute' || (imports.get(declaration.initializer.expression.text) === 'withSystemRoute' && declaration.initializer.arguments.length===1 && ts.isStringLiteral(declaration.initializer.arguments[0]) && ['hubspot','clickup','tick','daily'].includes(declaration.initializer.arguments[0].text)))) || calls(declaration.initializer, 'assertCan')));
     }
   }
   // Inline server actions are checked independently of the surrounding page export.
@@ -70,6 +70,9 @@ it('Detects forgotten guards, unused imports, unrelated calls, reexports and par
     '"use server"; export default async function () { return write(); }',
     '"use server"; export default async () => write();',
     'export * from "./unprotected";',
+    'import {withSystemRoute} from "../../server/events/http"; export const POST=withSystemRoute(write);',
+    'import {withSystemRoute} from "../../server/events/http"; export const POST=withSystemRoute("unknown");',
+    'import {withSystemRoute} from "./fake"; export const POST=withSystemRoute("tick");',
   ]) expect(guarded(source, 'sample.tsx')).toBe(false);
   expect(guarded('import {withMemberRoute as wrap} from "../../server/http"; export const POST=wrap(write);', 'sample.ts')).toBe(true);
 });
