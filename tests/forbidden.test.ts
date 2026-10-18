@@ -23,7 +23,7 @@ it.each([{ persona: 'ravi', status: 403, outcome: 'denied', name: 'Ravi Menon', 
   expect(result.status).toBe(status);
   expect(await result.json()).toEqual(status === 403 ? { error: 'not_allowed', message: 'Only a delivery lead or the agency director can approve delivery plans.' } : { ok: true, message: 'Approval recorded' });
   expect((await db.query('SELECT outcome,action,target_type,target_id,actor_name_at_event,actor_roles_at_event FROM audit_log WHERE workspace_id=$1', [sandbox])).rows).toEqual([{ outcome, action: 'approve_plan', target_type: 'run', target_id: run, actor_name_at_event: name, actor_roles_at_event: [role] }]);
-  expect((await db.query('SELECT * FROM approvals WHERE workspace_id=$1', [sandbox])).rows).toHaveLength(0);
+  expect((await db.query("SELECT * FROM approvals WHERE workspace_id=$1 AND (decisions <> '[]'::jsonb OR decided_by IS NOT NULL)", [sandbox])).rows).toHaveLength(0);
 });
 it('Refuses missing authentication before writes', async () => {
   const response = await POST(new Request('http://localhost', { method: 'POST' }), { params: Promise.resolve({ id: 'missing' }) });
@@ -35,12 +35,12 @@ it('The plan route records a real approval decision for Imran', async () => {
   const { sandbox } = await response.json();
   const run = (await db.query<{ id: string }>("SELECT id FROM runs WHERE workspace_id=$1 AND status='waiting_approval'", [sandbox])).rows[0].id;
   const member = (await db.query<Member & Record<string, unknown>>("SELECT id,workspace_id,display_name,roles,client_company_id,true AS is_demo FROM members WHERE workspace_id=$1 AND roles @> ARRAY['delivery_lead']", [sandbox])).rows[0];
-  const created = await fixtureRuntime(db).owner.approvals.createApproval({ runId: run, kind: 'provision', payload: { effects: [{ system: 'clickup', location: 'fixture list', action: 'create_task', records: [{ id: 'new', fields: { name: { before: null, after: 'Prepare the plan' } } }], amounts: {} }] }, inputRefs: [{ system: 'clickup', record_id: 'fixture list', version_marker: 'exists', hash: hash({ id: 'fixture list', archived: false }) }], reversibility: 'reversible', requestedByType: 'agent', requestedByMemberId: null }, member);
-  expect(created.status).toBe(201);
+  // The demo seed already holds the pending plan approval behind "Waiting for approval".
+  const seeded = (await db.query<{ id: string }>("SELECT id FROM approvals WHERE workspace_id=$1 AND run_id=$2 AND kind='provision' AND status='pending'", [sandbox, run])).rows[0];
   const result = await POST(new Request(`http://localhost/api/runs/${run}/approve-plan`, { method: 'POST', headers: { cookie: response.headers.get('set-cookie')!.split(';')[0] } }), { params: Promise.resolve({ id: run }) });
   expect(result.status).toBe(200);
   expect(await result.json()).toEqual({ message: 'Decision recorded' });
-  expect((await db.query('SELECT id,status,decided_by FROM approvals WHERE workspace_id=$1', [sandbox])).rows).toEqual([{ id: created.approval!.id, status: 'approved', decided_by: member.id }]);
-  expect((await db.query('SELECT action,outcome,actor_name_at_event FROM audit_log WHERE workspace_id=$1 ORDER BY id', [sandbox])).rows).toEqual([{ action: 'approval_created', outcome: 'succeeded', actor_name_at_event: 'Imran Shaikh' }, { action: 'approval_decided', outcome: 'succeeded', actor_name_at_event: 'Imran Shaikh' }]);
+  expect((await db.query("SELECT id,status,decided_by FROM approvals WHERE workspace_id=$1 AND kind='provision'", [sandbox])).rows).toEqual([{ id: seeded.id, status: 'approved', decided_by: member.id }]);
+  expect((await db.query('SELECT action,outcome,actor_name_at_event FROM audit_log WHERE workspace_id=$1 ORDER BY id', [sandbox])).rows).toEqual([{ action: 'approval_decided', outcome: 'succeeded', actor_name_at_event: 'Imran Shaikh' }]);
   expect((await db.query('SELECT id FROM external_effects WHERE workspace_id=$1', [sandbox])).rows).toHaveLength(0);
 });

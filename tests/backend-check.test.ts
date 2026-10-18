@@ -19,7 +19,7 @@ it('Demo backend check sends the existing POST with the actual Ravi session and 
  expect(body).toMatchObject({request:{method:'POST',path:`/api/runs/${run}/approve-plan`},status:403,message:'Only a delivery lead or the agency director can approve delivery plans.',row:{action:'approve_plan',outcome:'denied',actor_name_at_event:'Ravi Menon',target_id:run}});
  const response=await audit(new Request('http://localhost/api/audit',{headers:{cookie}}));const log=await response.json();expect(log.rows.find((r:{id:number})=>r.id===body.row.id)).toEqual(body.row);expect(log.chain.ok).toBe(true);
  const second=await(await check(request())).json();expect(Number(second.row.id)).toBeGreaterThan(Number(body.row.id));
- expect((await db.query('SELECT id FROM approvals WHERE workspace_id=$1',[sandbox])).rows).toHaveLength(0);
+ expect((await db.query("SELECT id FROM approvals WHERE workspace_id=$1 AND (decisions <> '[]'::jsonb OR decided_by IS NOT NULL)",[sandbox])).rows).toHaveLength(0);
 });
 
 it('Backend check refuses an absent session and a client demo session',async()=>{

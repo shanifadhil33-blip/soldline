@@ -90,6 +90,6 @@ it('Seeds the exact scope, CRM package, document and onboarding inputs', async (
   const response = await start(); const { sandbox } = await response.json();
   expect((await db.query('SELECT title FROM scope_items WHERE workspace_id=$1', [sandbox])).rows).toHaveLength(8);
   expect((await db.query('SELECT name FROM line_items WHERE workspace_id=$1', [sandbox])).rows).toHaveLength(4);
-  expect((await db.query('SELECT label FROM onboarding_inputs WHERE workspace_id=$1', [sandbox])).rows).toHaveLength(6);
+  expect((await db.query('SELECT label FROM onboarding_inputs i JOIN runs r ON r.id=i.run_id WHERE i.workspace_id=$1 AND r.status=$2', [sandbox, 'waiting_approval'])).rows).toHaveLength(6);
   expect((await db.query('SELECT source,page_count FROM scope_documents WHERE workspace_id=$1', [sandbox])).rows).toEqual([{ source: 'hubspot_note', page_count: 3 }]);
 });

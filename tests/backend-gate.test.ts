@@ -69,6 +69,7 @@ async function scenario() {
   const member=Object.fromEntries(members.map(m=>[m.preferred_name,m.id])) as Record<Persona,string>;
   const deal=(await query<{id:string}>('SELECT id FROM deals WHERE workspace_id=$1 AND owner_member_id=$2 ORDER BY name',[ws,member.omar]))[1].id;
   // Fixture preparation supplies the signed file and explicit delivery mappings before the won event.
+  await db.query('DELETE FROM monitor_tasks WHERE workspace_id=$1',[ws]);await db.query('DELETE FROM recovery_items WHERE workspace_id=$1',[ws]);await db.query('DELETE FROM approvals WHERE workspace_id=$1',[ws]);
   await db.query('DELETE FROM findings WHERE workspace_id=$1',[ws]);await db.query('DELETE FROM onboarding_inputs WHERE workspace_id=$1',[ws]);await db.query('DELETE FROM runs WHERE workspace_id=$1',[ws]);
   await db.query('DELETE FROM scope_items WHERE workspace_id=$1',[ws]);await db.query('DELETE FROM scope_versions WHERE workspace_id=$1',[ws]);
   const ref=(live?'LIVE':'FIXTURE')+randomUUID().replaceAll('-','');
