@@ -14,5 +14,9 @@ export const GET=withMemberRoute(async (_request,context,member,db)=>{
   if(member.roles.includes('client_reviewer')) return Response.json({run:{id:run.id,status:run.status},items,inputs});
   const scope=(await db.query('SELECT id,version,status,items_hash FROM scope_versions WHERE id=$1',[run.scope_version_id])).rows[0]??null;
   const findings=(await db.query('SELECT id,kind,severity,title,evidence,status FROM findings WHERE run_id=$1 ORDER BY id',[id])).rows;
-  return Response.json({run,scope,items,inputs,findings});
+  const approvals=(await db.query('SELECT * FROM approvals WHERE run_id=$1 ORDER BY expires_at DESC,id',[id])).rows;
+  const history=(await db.query("SELECT id,at,action,outcome,actor_name_at_event FROM audit_log WHERE target_id=$1 OR approval_id IN (SELECT id FROM approvals WHERE run_id=$1::uuid) ORDER BY id",[id])).rows;
+  const title=(await db.query<{name:string}>('SELECT name FROM deals WHERE id=(SELECT deal_id FROM runs WHERE id=$1)',[id])).rows[0]?.name;
+  const members=(await db.query('SELECT id,display_name,clickup_user_id FROM members WHERE archived_at IS NULL')).rows;
+  return Response.json({run,scope,items,inputs,findings,approvals,history,title,members,isDemo:member.is_demo});
 });

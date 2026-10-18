@@ -1,0 +1,58 @@
+import { expect,test } from '@playwright/test';
+import en from '../../messages/en.json';
+import ar from '../../messages/ar.json';
+for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Core demo ${width} ${locale}`,async({page})=>{
+  const m=locale==='en'?en:ar,s=m.screens;
+  const errors:string[]=[];
+  page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.setViewportSize({width,height:900});
+  await page.goto(`/demo?lang=${locale}`);
+  await page.getByRole('button',{name:new RegExp(m.demo.people.imran)}).click();
+  await page.getByRole('link',{name:m.demo.open}).click();
+  await expect(page.getByRole('heading',{name:s.needsAction})).toBeVisible();
+  await expect(page.locator('.metric-strip')).toBeVisible();
+  await page.goto('/runs');
+  await page.getByRole('combobox',{name:s.sort,exact:true}).selectOption('client');
+  await page.getByRole('combobox',{name:s.order,exact:true}).selectOption('asc');
+  await page.getByRole('button',{name:s.apply,exact:true}).click();
+  await expect(page).toHaveURL(/sort=client&direction=asc/);
+  await expect(page.locator(width===390?'.runs-phone':'.runs-table')).toBeVisible();
+  await page.locator(width===390?'.runs-phone':'.runs-table').getByRole('link',{name:/Harbor Coffee/}).click();
+  await expect(page.getByRole('heading',{name:s.timeline,exact:true})).toBeVisible();
+  await expect(page.locator('.plan-diff').getByText(s.before,{exact:true}).first()).toBeVisible();
+  await expect(page.locator('.plan-diff').getByText(s.after,{exact:true}).first()).toBeVisible();
+  const stale=page.locator('.approval-card').filter({has:page.locator('.stale-notice')});
+  await expect(stale.getByRole('alert')).toContainText(locale==='en'?'Out of date: HubSpot deal changed':s.stale.split('{what}')[0]);
+  await expect(stale.getByRole('button',{name:s.approve,exact:true})).toBeDisabled();
+  const id=await stale.getAttribute('data-approval-id');
+  const refused=await page.request.post(`/api/approvals/${id}/execute`);
+  expect(refused.status()).toBe(409);
+  expect((await page.request.post(`/api/approvals/${id}/run`)).status()).toBe(409);
+  expect((await page.request.post(`/api/approvals/${id}/decide`,{data:{decision:'approve',note:''}})).status()).toBe(409);
+  const pending=page.locator('.approval-card').filter({hasNot:page.locator('.stale-notice')});
+  await expect(pending.getByText(s.reversibility.reversible,{exact:true})).toBeVisible();
+  await expect(pending.getByText(s.before,{exact:true}).first()).toBeVisible();
+  await expect(pending.getByText(s.after,{exact:true}).first()).toBeVisible();
+  await pending.getByRole('button',{name:s.approve,exact:true}).click();
+  await expect(pending.getByRole('button',{name:s.execute,exact:true})).toBeVisible();
+  await pending.getByRole('button',{name:s.execute,exact:true}).click();
+  await expect(page.locator('.run-detail > p').first()).toHaveText(s.statuses.ready,{timeout:30000});
+  await page.getByRole('button',{name:s.tabs.clickup,exact:true}).click();
+  await expect(page.getByRole('heading',{name:s.live})).toBeVisible();
+  await expect(page.locator('.task-list article')).toHaveCount(8);
+  await expect(page.locator('.task-list')).toContainText(m.demo.people.ravi);
+  await expect(page.getByText(s.readAt,{exact:false})).toBeVisible();
+  const replayResponse=page.waitForResponse(r=>r.url().endsWith('/replay'));
+  await page.getByRole('button',{name:s.replay,exact:true}).click();
+  const replay=await(await replayResponse).json();
+  expect(replay.newActions).toBe(0);
+  await expect(page.locator('.demo-controls [role="status"]')).toHaveText(replay.message);
+  for(const tab of ['inputs','findings','emails','history','plan'] as const){
+    await page.getByRole('button',{name:s.tabs[tab],exact:true}).click();
+    await expect(page).toHaveURL(new RegExp(`tab=${tab}`));
+    if(tab==='emails'){await expect(page.getByText('Hello Karim. Please share Meta account access before launch. Thank you, Omar.',{exact:true})).toBeVisible();await expect(page.getByText(s.reversibility.irreversible,{exact:true})).toBeVisible();}
+    await expect.poll(()=>page.evaluate(()=>({document:document.documentElement.scrollWidth,body:document.body.scrollWidth,viewport:innerWidth}))).toEqual({document:width,body:width,viewport:width});
+  }
+  expect(errors).toEqual([]);
+});

@@ -129,3 +129,11 @@ There is no docs/P1.md or plan.md in the repo. docs/verification.md contains the
 The live mode deliberately retains fixtures for inbound mail, injected faults and monitor observations of its own creates. It verifies real HubSpot writes and ClickUp task counts only after Bilal runs it. Provider paths, response compatibility, live cleanup and live timing remain unverified. Production concurrency and provider conditional writes remain parked. The older contributor run policy still uses assigned findings or recovery work as its approximation of task ownership; this phase does not claim to replace that broader permission policy.
 
 During initial instruction discovery, a find command listed AGENTS.md paths in neighboring repos. Those files were not opened or edited. All subsequent source reads and retained edits stayed in this repo. The requested /tmp/gate.out is the only intended retained write outside it. No environment file was opened or edited. No real sign in, live HubSpot, ClickUp, mail or AI call, Neon connection, global installation, commit or push occurred.
+
+## P12 screen routes
+
+`GET /api/runs/[id]/tasks` reads current ClickUp tasks through the existing member session, row security, Connections and ClickUpClient. It reads only lists created successfully for the visible run. Provider failures return a refusal rather than old task data.
+
+`POST /api/approvals/[id]/run` uses the existing P7 approval HTTP boundary and schedules the existing P8 worker through Next after only when execution is accepted. It adds no approval or executor rules.
+
+The existing run read now includes staff approval payloads, visible audit rows and workspace member display names. Client responses keep their existing narrow shape.

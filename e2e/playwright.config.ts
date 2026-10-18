@@ -11,7 +11,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'export PATH=/home/box/.local/node22/bin:$PATH\nnode --version\npnpm --dir .. start --hostname 127.0.0.1',
-    env: { DEMO_SIGNING_KEY: 'local shell fixture signing key only', AUTH_SECRET: 'local shell fixture auth secret only' },
+    env: { DEMO_SIGNING_KEY: 'local shell fixture signing key only', AUTH_SECRET: 'local shell fixture auth secret only', TOKEN_ENC_KEY: Buffer.alloc(32,7).toString('base64') },
     timeout: 120000,
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: false,

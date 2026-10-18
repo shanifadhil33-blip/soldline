@@ -18,7 +18,7 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
   const [busy, setBusy] = useState(false); const [error, setError] = useState(false);
   const navigation: readonly NavKey[] = reviewer ? ['home', 'inputs'] : staffNavigation;
   const tabs: readonly NavKey[] = reviewer ? ['home', 'inputs'] : ['today', 'runs', 'queue', 'more'];
-  const active = (key: NavKey) => path === navPaths[key] || (key === 'more' && staffNavigation.slice(3).some(item => navPaths[item] === path));
+  const active = (key: NavKey) => path === navPaths[key] || (key === 'runs' && path.startsWith('/runs/')) || (key === 'more' && staffNavigation.slice(3).some(item => navPaths[item] === path));
   async function switchPersona(next: DemoPersona) {
     setBusy(true); setError(false);
     try { await startDemo(next); dialog.current?.close(); setConfirming(false); router.replace(demoHome(next)); router.refresh(); }
