@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     server: { deps: { inline: ['next-auth'] } },
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**', '.next/**'],
     setupFiles: ['./tests/setup.ts'],
   },

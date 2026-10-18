@@ -15,3 +15,97 @@ body {
   font-weight: 400;
   font-synthesis: none;
 }
+
+/* Every inline edge uses logical properties so the same frame serves both languages. */
+* { box-sizing: border-box; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+button, select { font: inherit; color: inherit; }
+button, a, select { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .65; }
+button, select, dialog { border: 1px solid var(--border-structure); border-radius: var(--radius-6); }
+button, select { background: var(--surface); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+h1, h2, p { margin-block: 0; }
+h1, h2, strong { font-weight: 600; }
+.brand { font-size: 24px; font-weight: 600; letter-spacing: -.8px; text-decoration: none; }
+.public-page { max-inline-size: 1328px; margin-inline: auto; padding-inline: 48px; }
+.public-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-block-size: 96px; border-block-end: 1px solid var(--border); }
+.header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; min-inline-size: 0; }
+.language-link { white-space: nowrap; }
+.landing-hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: center; gap: 64px; padding-block: 96px; }
+.landing-hero h1 { max-inline-size: 800px; font-size: clamp(36px, 4vw, 56px); line-height: 1.14; letter-spacing: -1.7px; text-wrap: balance; }
+:lang(ar) .landing-hero h1 { letter-spacing: normal; line-height: 1.5; }
+.landing-subline { margin-block-start: 24px; color: var(--text-secondary); max-inline-size: 650px; line-height: 1.8; }
+.hero-actions, .dialog-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-block-start: 24px; }
+.button { display: inline-flex; justify-content: center; align-items: center; min-block-size: 48px; padding-block: 12px; padding-inline: 20px; border: 1px solid var(--border-structure); border-radius: var(--radius-6); text-decoration: none; background: var(--surface); }
+.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.handover { border: 1px solid var(--border-structure); border-radius: var(--radius-8); padding-block: 24px; padding-inline: 24px; background: var(--surface); }
+.handover > p { font-size: 20px; max-inline-size: 250px; }
+.handover ol { list-style: none; padding: 0; margin-block: 24px 0; }
+.handover li { display: flex; align-items: center; gap: 16px; padding-block: 16px; border-block-start: 1px solid var(--border); }
+.step-number { display: grid; place-items: center; inline-size: 32px; block-size: 32px; flex-shrink: 0; border: 1px solid var(--border-structure); border-radius: 50%; color: var(--accent); }
+.landing-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; padding-block: 40px 64px; border-block-start: 1px solid var(--border-structure); }
+.section-number { color: var(--text-secondary); }
+.landing-sections h2 { font-size: 24px; line-height: 1.35; margin-block: 16px; }
+.landing-sections p, .muted { color: var(--text-secondary); }
+.public-footer { padding-block: 24px; border-block-start: 1px solid var(--border); color: var(--text-secondary); }
+.stack-line { white-space: nowrap; font-size: clamp(10px, 2.6vw, 14px); margin-block-start: 12px; }
+.demo-content { max-inline-size: 820px; margin-inline: auto; padding-block: 56px; }
+.demo-content h1 { font-size: 36px; margin-block: 16px; }
+.persona-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block-start: 32px; }
+.persona-card { display: flex; flex-direction: column; gap: 8px; padding-block: 24px; padding-inline: 24px; text-align: start; }
+.persona-card span { color: var(--text-secondary); }
+.persona-card[aria-pressed="true"] { border-color: var(--accent); outline: 1px solid var(--accent); }
+.demo-status { min-block-size: 112px; padding-block: 24px; }
+.demo-status .button { margin-block-start: 12px; }
+.sample-badge { display: inline-flex; padding-block: 4px; padding-inline: 8px; border: 1px solid var(--border-structure); border-radius: var(--radius-6); font-size: 12px; white-space: nowrap; }
+.app-frame { display: flex; min-block-size: 100dvh; }
+.app-sidebar { inline-size: 224px; flex-shrink: 0; padding-block: 32px; padding-inline: 24px; border-inline-end: 1px solid var(--border-structure); display: flex; flex-direction: column; gap: 48px; }
+.app-sidebar nav { display: grid; gap: 8px; }
+.app-sidebar nav a, .more-navigation a { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-block: 12px; padding-inline: 12px; border-radius: var(--radius-6); text-decoration: none; }
+.app-sidebar nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+.sidebar-person { margin-block-start: auto; color: var(--text-secondary); overflow-wrap: anywhere; }
+.app-column { flex: 1; min-inline-size: 0; }
+.app-header { min-block-size: 112px; padding-block: 24px; padding-inline: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; border-block-end: 1px solid var(--border); }
+.workspace-heading { display: grid; gap: 4px; min-inline-size: 0; overflow-wrap: anywhere; }
+.workspace-heading > span { font-size: 12px; }
+.persona-select { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 14px; }
+.persona-select select { max-inline-size: 100%; min-block-size: 44px; padding-block: 8px; padding-inline: 8px; }
+.text-button { padding-block: 12px; padding-inline: 0; border: 0; background: none; text-decoration: underline; text-underline-offset: 4px; }
+.app-main { padding-block: 40px; padding-inline: 32px; }
+.page-title { font-size: 28px; }
+.empty-state { max-inline-size: 640px; margin-block-start: 32px; padding-block: 64px; padding-inline: 24px; border: 1px solid var(--border); border-radius: var(--radius-8); background: var(--surface); }
+.empty-state h2 { font-size: 20px; margin-block: 16px 8px; }
+.empty-state p { color: var(--text-secondary); max-inline-size: 400px; }
+.empty-mark { display: block; inline-size: 32px; block-size: 40px; border: 1px solid var(--border-structure); border-radius: var(--radius-6); }
+.count-badge { display: inline-grid; place-items: center; min-inline-size: 24px; block-size: 24px; padding-inline: 4px; border: 1px solid currentColor; border-radius: 12px; font-size: 12px; }
+.phone-tabs { display: none; }
+.more-navigation { max-inline-size: 640px; margin-block-start: 24px; }
+.more-navigation a { border-block-end: 1px solid var(--border); }
+.reset-dialog { max-inline-size: min(480px, calc(100% - 32px)); padding-block: 24px; padding-inline: 24px; background: var(--background); color: var(--text); }
+.reset-dialog::backdrop { background: rgb(40 26 13 / 30%); }
+.reset-dialog h2 { font-size: 24px; margin-block-end: 16px; }
+.shell-status { padding-block: 12px; padding-inline: 24px; }
+.skip-link { position: fixed; inset-block-start: 8px; inset-inline-start: 8px; z-index: 10; padding: 12px; background: var(--surface); transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+@media (max-width: 767px) {
+  .public-page { padding-inline: 20px; }
+  .public-header { min-block-size: 80px; }
+  .header-actions { gap: 12px; }
+  .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 48px; }
+  .landing-hero h1 { font-size: 36px; letter-spacing: -1px; }
+  .landing-sections { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-block: 32px; }
+  .landing-sections h2 { font-size: 24px; }
+  .demo-content { padding-block: 32px; }
+  .demo-content h1 { font-size: 28px; }
+  .persona-grid { grid-template-columns: minmax(0, 1fr); }
+  .app-sidebar { display: none; }
+  .app-header { padding-block: 16px; padding-inline: 20px; gap: 16px; }
+  .app-header .header-actions { inline-size: 100%; }
+  .app-main { padding-block: 24px 112px; padding-inline: 20px; }
+  .empty-state { margin-block-start: 24px; padding-block: 40px; padding-inline: 20px; }
+  .phone-tabs { position: fixed; inset-block-end: 0; inset-inline: 0; display: flex; justify-content: space-around; background: var(--surface); border-block-start: 1px solid var(--border-structure); padding-block: 8px max(8px, env(safe-area-inset-bottom)); padding-inline: 8px; }
+  .phone-tabs a { display: flex; gap: 4px; align-items: center; justify-content: center; min-block-size: 48px; min-inline-size: 0; flex: 1; padding-inline: 4px; text-decoration: none; font-size: 14px; border-radius: var(--radius-6); }
+  .phone-tabs a[aria-current="page"] { color: var(--accent); outline: 1px solid var(--accent); outline-offset: -2px; }
+}

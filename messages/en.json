@@ -1,7 +1,91 @@
 {
   "landing": {
     "headline": "Every deliverable you sell gets an owner, a deadline and an approval.",
-    "status": "Soldline is being set up."
+    "subline": "Soldline reads the signed scope when a HubSpot deal is won, checks it against what was entered, and sets up the work in ClickUp only after the right person approves the exact change.",
+    "demo": "Try the demo",
+    "signIn": "Sign in",
+    "sections": [
+      "Catches what sales and delivery disagree on",
+      "Nothing changes without an exact approval",
+      "Safe when systems fail"
+    ],
+    "details": [
+      "See what was promised beside what was entered. Give each difference an owner before delivery starts.",
+      "Review the owner, deadline and exact change together. The right person decides before Soldline acts.",
+      "Keep completed work. See what needs attention and choose when to try again."
+    ],
+    "stack": "Next.js, Postgres, HubSpot, ClickUp, team inbox",
+    "preview": "From signed scope to owned work",
+    "scope": "Signed scope",
+    "check": "Check the promise",
+    "approve": "Approve the exact change",
+    "deliver": "Set up delivery",
+    "promise": "A clear handover for every promise.",
+    "footer": "Built for the work you agreed to deliver."
   },
-  "ai_unavailable": "The document could not be read right now. Try again later."
+  "ai_unavailable": "The document could not be read right now. Try again later.",
+  "common": {
+    "language": "العربية",
+    "brand": "Soldline",
+    "home": "Home",
+    "navigation": "Navigation",
+    "skip": "Skip to content",
+    "cancel": "Cancel",
+    "retry": "Retry"
+  },
+  "nav": {
+    "today": "Today",
+    "runs": "Runs",
+    "recovery": "Recovery",
+    "audit": "Audit log",
+    "connections": "Connections",
+    "templates": "Templates",
+    "team": "Team",
+    "settings": "Settings",
+    "queue": "Queue",
+    "more": "More",
+    "home": "Home",
+    "inputs": "Inputs"
+  },
+  "shell": {
+    "sample": "Sample data",
+    "persona": "View as",
+    "reset": "Reset demo",
+    "confirmTitle": "Start the demo again?",
+    "confirmBody": "This opens the demo start flow again. Existing sample work is kept.",
+    "resetConfirm": "Start again",
+    "workspace": "Workspace",
+    "workspaceFallback": "My workspace",
+    "loading": "Opening the demo",
+    "error": "We could not open the demo. Please try again."
+  },
+  "demo": {
+    "title": "Choose your view",
+    "intro": "See the same handover through the people responsible for it.",
+    "fictional": "Northlight Studio, Harbor Coffee Roasters and Cedar Line Furniture are fictional.",
+    "choose": "Choose a person to start.",
+    "creating": "Creating your demo",
+    "ready": "Your demo is ready",
+    "error": "We could not start the demo. Please try again.",
+    "open": "Open workspace",
+    "roles": {
+      "admin": "Workspace owner",
+      "account_manager": "Account manager",
+      "delivery_lead": "Delivery lead",
+      "contributor": "Team member",
+      "client_reviewer": "Client reviewer"
+    },
+    "people": {
+      "faisal": "Faisal Rahman",
+      "omar": "Omar Haddad",
+      "imran": "Imran Shaikh",
+      "ravi": "Ravi Menon",
+      "karim": "Karim Nasser",
+      "laith": "Laith Saeed"
+    }
+  },
+  "empty": {
+    "title": "Coming next",
+    "body": "This page is being prepared. Choose another page to explore the workspace."
+  }
 }

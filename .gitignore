@@ -11,3 +11,4 @@ playwright-report/
 .pnpm-store/
 .pnpm-cache/
 .pnpm-state/
+.p11-*.log
