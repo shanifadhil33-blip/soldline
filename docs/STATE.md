@@ -147,3 +147,7 @@ Vercel: Hobby, not linked yet.
 Email: team inbox for demo email instead of Gmail.
 
 Service credentials are managed outside the repo. Variable names and purposes are listed in the example environment file. No key values are stored here.
+
+## P14 (Oct 19 2026, by hand while Codex was out of usage)
+Done: /privacy and /terms; seed sets no currency (test portal is USD only) and resets the deal to Not started; scope PDF names Imran Shaikh; agency titles Agency director (admin) and Specialist (contributor); POST /api/sign-out (same site only); Auth.js error copy, error.tsx, global-error.tsx; notifications by database triggers (drizzle/sql/0011_notifications.sql, applied on Neon) with GET /api/notifications and POST /api/notifications/read; demo seed has a waiting item for every persona and the real pending approvals behind Waiting for approval (Today data in src/server/today.ts); fail() and answer() in src/server/http.ts so no route answers an empty error.
+Open: ClickUp status write back, sample inbox provider, demo controls as real writes, the demo_cleanup job handler (6 hour cleanup), agent, memory, settings, MCP, Help and feedback. e2e specs were not rerun against the new seed.
