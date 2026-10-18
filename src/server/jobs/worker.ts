@@ -4,6 +4,7 @@ import type { systemProviders } from './providers';
 import type { HubspotEvent } from '../events/model';
 export type Providers = ReturnType<typeof systemProviders>;
 export async function perform(store: JobStore, providers: Providers, job: Job, now = Date.now, deadline=Date.now()+25000) {
+  if(job.kind==='execute_approval_effect') { await store.executeEffect(job,deadline); return; }
   if(job.kind==='process_event') { await store.handleEvent(job.workspace_id,job.payload.eventId); return; }
   if(job.kind==='analyse_deal') {
     if(!await store.hasDeal(job.workspace_id,job.payload.dealId)) await store.importDeal(job.workspace_id,await providers.hubspot(job.workspace_id,deadline).getDeal(job.payload.dealId));

@@ -6,6 +6,7 @@ import { NeedsReconnect, ProviderRejected, RateLimited, Retryable } from './erro
 export interface TransportOptions {
   connections: Connections;
   now?: () => number;
+  deadline?: number;
   sleep?: (ms: number) => Promise<void>;
 }
 export class Transport {
@@ -31,12 +32,14 @@ export class Transport {
     for (let attempt = 0; attempt < 2; attempt++) {
       const delay = await connections.take(this.provider, bucketKey, this.now());
       if (delay) throw new RateLimited(this.now() + delay);
+      const remaining=this.options.deadline===undefined?30000:this.options.deadline-this.now()-250;
+      if(remaining<=0) throw new Retryable();
       const id = randomUUID();
       await connections.record(this.provider, id, 'started', false);
       let response: Response;
       try {
         response = await fetch(this.base + path, {
-          method, redirect: 'error', signal: AbortSignal.timeout(30000),
+          method, redirect: 'error', signal: AbortSignal.timeout(Math.max(1,Math.min(30000,remaining))),
           headers: { Authorization: this.provider === 'clickup' ? token : `Bearer ${token}`, 'Content-Type': 'application/json', 'X-Request-Id': id },
           body: body === undefined ? undefined : JSON.stringify(body),
         });
@@ -51,7 +54,7 @@ export class Transport {
       if (response.status === 429) {
         await connections.record(this.provider, id, '429', false);
         const reset = this.resetAt(response.headers);
-        if (attempt === 0 && reset !== undefined) { await this.sleep(Math.max(0, reset - this.now())); continue; }
+        if (attempt === 0 && reset !== undefined && (this.options.deadline===undefined || reset<this.options.deadline-250)) { await this.sleep(Math.max(0, reset - this.now())); continue; }
         throw new RateLimited(reset ?? this.now() + 60000);
       }
       if (!response.ok) {

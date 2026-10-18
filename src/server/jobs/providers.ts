@@ -9,7 +9,7 @@ import { decryptToken } from '../crypto';
 import type { SqlConnection, TransactionDriver } from '../db/withMember';
 import { systemAudit } from './store';
 // Existing clients remain unchanged. This worker adapter has no member identity or credential write methods.
-class WorkerConnections extends Connections {
+export class WorkerConnections extends Connections {
   constructor(private readonly worker: TransactionDriver, ws: string, private readonly tokenKey?: string) { super(worker,ws,'',tokenKey); }
   private operation<T>(work: (db: SqlConnection)=>Promise<T>) { return this.worker.transaction(work); }
   override async load(provider: Provider) {

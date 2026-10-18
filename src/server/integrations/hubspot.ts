@@ -36,7 +36,7 @@ export class HubSpotClient {
   }
   async patchDealProperties(id: string, properties: DealWrite, approved: ApprovedDeal) {
     const current = await this.getDeal(id);
-    if (Object.keys(properties).some(key => !Object.hasOwn(approved.properties, key)) || current.properties.hs_lastmodifieddate !== approved.modifiedAt || Object.entries(approved.properties).some(([key, value]) => current.properties[key] !== value)) throw new Error('Deal changed since approval');
+    if (Object.keys(properties).some(key => !Object.hasOwn(approved.properties, key)) || current.properties.hs_lastmodifieddate !== approved.modifiedAt || Object.entries(approved.properties).some(([key, value]) => (current.properties[key] ?? null) !== value)) throw new Error('Deal changed since approval');
     const allowed = ['soldline_delivery_status', 'soldline_plan_url', 'soldline_run_ref'];
     if (Object.keys(properties).some(key => !allowed.includes(key))) throw new Error('Deal property refused');
     return this.http.request('PATCH', `${HUBSPOT_PATHS.deals}/${segment(id)}`, crmObject, { properties });

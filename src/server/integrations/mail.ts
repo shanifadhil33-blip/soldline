@@ -16,8 +16,8 @@ const inbox = z.object({ inbox_id: z.string(), display_name: z.string().optional
 const thread = z.object({ thread_id: z.string(), messages: z.array(message) }).passthrough();
 const draft = z.object({ draft_id: z.string() }).passthrough();
 export type MailMessage = z.infer<typeof message>;
-export interface DraftInput { to: string[]; subject: string; text: string; replyToMessageId?: string }
-export interface SentSearch { to: string; subject: string; since: string }
+export interface DraftInput { to: string[]; subject: string; text: string; replyToMessageId?: string; messageId?: string }
+export interface SentSearch { to: string; subject: string; since: string; messageId?: string }
 export interface MailProvider {
   getInbox(): Promise<z.infer<typeof inbox>>;
   listMessagesSince(cursor: string): Promise<z.infer<typeof messages>>;
@@ -40,10 +40,10 @@ export class AgentMailProvider implements MailProvider {
   getMessage(id: string) { return this.http.request('GET', MAIL_PATHS.message(this.address, id), message); }
   getThread(id: string) { return this.http.request('GET', MAIL_PATHS.thread(this.address, id), thread); }
   createDraft(input: DraftInput) {
-    return this.http.request('POST', MAIL_PATHS.drafts(this.address), draft, { to: input.to, subject: input.subject, text: input.text, ...(input.replyToMessageId ? { in_reply_to: input.replyToMessageId } : {}) });
+    return this.http.request('POST', MAIL_PATHS.drafts(this.address), draft, { to: input.to, subject: input.subject, text: input.text, ...(input.messageId ? { headers: { 'Message-ID': input.messageId } } : {}), ...(input.replyToMessageId ? { in_reply_to: input.replyToMessageId } : {}) });
   }
   sendDraft(id: string) { return this.http.request('POST', MAIL_PATHS.send(this.address, id), message, {}); }
-  searchSent(input: SentSearch) { return this.http.request('GET', MAIL_PATHS.messages(this.address) + '?' + new URLSearchParams({ labels: 'sent', to: input.to, subject: input.subject, after: input.since }), messages); }
+  searchSent(input: SentSearch) { return this.http.request('GET', MAIL_PATHS.messages(this.address) + '?' + new URLSearchParams({ labels: 'sent', to: input.to, subject: input.subject, after: input.since, ...(input.messageId ? { message_id: input.messageId } : {}) }), messages); }
 }
 
 /** Explicit admin setup. Request methods subsequently load the encrypted credential. */

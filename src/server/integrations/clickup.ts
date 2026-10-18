@@ -20,6 +20,11 @@ export class ClickUpClient {
   createList(folderId: string, name: string) { return this.http.request('POST', `${CLICKUP_PATHS.folder}/${segment(folderId)}/list`, entity, { name }); }
   createTask(listId: string, input: TaskInput) { return this.http.request('POST', `${CLICKUP_PATHS.list}/${segment(listId)}/task`, task, { ...input, due_date_time: false }); }
   getListTasks(listId: string, page = 0) { return this.http.request('GET', `${CLICKUP_PATHS.list}/${segment(listId)}/task?include_markdown_description=true&subtasks=true&page=${page}`, z.object({ tasks: z.array(task), last_page: z.boolean().optional() })); }
+  getFolder(id: string) { return this.http.request('GET', `${CLICKUP_PATHS.folder}/${segment(id)}`, entity); }
+  getList(id: string) { return this.http.request('GET', `${CLICKUP_PATHS.list}/${segment(id)}`, entity); }
+  getTask(id: string) { return this.http.request('GET', `${CLICKUP_PATHS.task}/${segment(id)}`, task); }
+  archiveList(id: string) { return this.http.request('PUT', `${CLICKUP_PATHS.list}/${segment(id)}`, entity, { archived: true }); }
+  archiveFolder(id: string) { return this.http.request('PUT', `${CLICKUP_PATHS.folder}/${segment(id)}`, entity, { archived: true }); }
   updateTask(id: string, input: TaskUpdate) { return this.http.request('PUT', `${CLICKUP_PATHS.task}/${segment(id)}`, task, input); }
   archiveTask(id: string) { return this.http.request('PUT', `${CLICKUP_PATHS.task}/${segment(id)}`, task, { archived: true }); }
   deleteTask(id: string) { return this.http.request('DELETE', `${CLICKUP_PATHS.task}/${segment(id)}`, emptyResponse); }

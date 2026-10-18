@@ -40,9 +40,15 @@ Execution locks the approval, checks the stored hashes and current approver role
 
 The temporary plan route now decides an actual pending approval for real workspaces and demos. Its contributor 403 proof remains intact. P7 verification passes 436 tests across 23 files, including 75 new approval tests. The gate passes lint, types, tests and the production build with exit code 0 using local font fixtures. See docs/P7.md for every rule and its test, exact live recheck lines, files and limits.
 
+P8 adds durable execution of exact P7 approvals through the existing P5 queue and private owner operations. Provision creates a folder, four lists and eight owned dated ClickUp tasks, then reads and patches the HubSpot delivery fields. Every task create first reconciles its target list using the exact Soldline reference. A timeout adopts the existing task. The outage after five tasks ends with eight distinct tasks after recovery. Missing line items create recovery work for Omar.
+
+Recovery routes support retry now, resolve with note, cancel remaining and reconcile. Unknown team inbox mail searches sent messages by our Message ID and never automatically resends. Pause cancels pending jobs and preserves successful effects. Undo requests a separate reversal approval, archives only unchanged ClickUp objects and restores HubSpot values only while our after values still match. Changed tasks produce the exact Ravi refusal. All decisions and execution state changes append audit rows.
+
+P8 verification passes 469 tests across 25 files, including 33 new executor and recovery tests. The gate passes lint, types, all tests and the production build with exit code 0 using cached local font fixtures. See docs/P8.md for files created, every rule and its test, the marker self audit, queue choices, deviations and verification limits.
+
 ## Next
 
-P8 delivery execution. Consume exact planned effects and jobs, recheck each write, send approved client email through the team inbox provider using createDraft then sendDraft, and record completion and compensation results. Continue using local fixtures until live service work is explicitly requested.
+P9. Continue from the verified executor, recovery and reversal flows. Keep using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -70,16 +76,16 @@ Contributor scope suggestions and client scope requests use an explicit intent a
 
 ## Parked
 
-P7 leaves actual effect execution, scope acceptance writes, cancellation, undo and the final executed summary to P8. The existing worker does not claim execute_approval_effect jobs. ClickUp events without a list id conservatively mark open list approvals stale across the workspace. Every caller must supply all input references on which the exact payload depends. Production concurrency and provider conditional write contracts remain unverified. Data can change after the live read, so P8 must recheck each real write. No integration or scope engine code was changed.
+P8 now executes provision, mail, recovery and reversal effects and claims execution jobs through P5. Scope acceptance mutations remain parked because their approved write contract is unspecified. Unsupported actions fail closed into recovery. The prior sandbox placeholders and run detail screen remain unverified. Mail Message ID mapping and sent search remain fixture contracts. Remote conditional writes and production concurrency remain unverified. P7 approval envelopes retain their existing keys while executable child records use the decided SHA256 keys. ClickUp events without a list id conservatively mark open list approvals stale across the workspace. Every caller must supply all input references on which the exact payload depends. Production concurrency and provider conditional write contracts remain unverified. Data can change after the live read, so P8 must recheck each real write. No integration or scope engine code was changed.
 
-P6 leaves automatic signed file retrieval parked with the existing unverified HubSpot file URL contract. The named scope ingestion operation accepts the PDF bytes and stores numbered page text. Analysis consumes the local HubSpot line item mirror and supplied onboarding records. The earlier sandbox seed retains its placeholder data and was outside this phase. A full run detail screen and elapsed demo UI timing remain unverified. Contract start dates and mapping ClickUp list ids need explicit configuration. AI adapters require named compatible endpoint settings and have only been exercised with MSW. P7 now owns real approval writes. P8 will carry out approved scope acceptance effects.
+P6 leaves automatic signed file retrieval parked with the existing unverified HubSpot file URL contract. The named scope ingestion operation accepts the PDF bytes and stores numbered page text. Analysis consumes the local HubSpot line item mirror and supplied onboarding records. The earlier sandbox seed retains its placeholder data and was outside this phase. A full run detail screen and elapsed demo UI timing remain unverified. Contract start dates and mapping ClickUp list ids need explicit configuration. AI adapters require named compatible endpoint settings and have only been exercised with MSW. P7 now owns real approval writes. Scope acceptance mutations need an explicit approved write contract before execution.
 
 P5 needs deployment settings before external scheduling: TICK_URL and TICK_SECRET in GitHub secrets, TICK_SECRET on the app, and CRON_SECRET for the daily Vercel bearer. HUBSPOT_APP_CLIENT_SECRET must match the webhook app. Each HubSpot connection needs won_stage_id and should name delivery_lead_id. These were not configured remotely. The requested unit tests skill is absent, so P5 used the existing Vitest, MSW and PGlite setup directly.
 
 P6 verified unpdf with Node v22.23.3 by putting the supplied local runtime first on PATH for every shell command. Production webhook response latency and database concurrency across separate connections remain unverified locally.
 
 
-UNVERIFIED mail paths below all require confirmation against the live inbox API before P8. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
+UNVERIFIED mail paths below require confirmation against the live inbox API before live use. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
 
 `GET /inboxes/{inbox}`
 
@@ -106,7 +112,7 @@ HubSpot approval checks read the current modified time and the approved values b
 
 Contributors see runs linked to findings or recovery_items they own until tasks exist. Replace this approximation when task ownership is available.
 
-The cleanup worker, delivery execution, language switching and deployment belong to later phases. P7 replaced the audit only demo approval proof with a real approval decision. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
+The cleanup worker, language switching and deployment belong to later phases. P8 now owns delivery execution. P7 replaced the audit only demo approval proof with a real approval decision. Production concurrency across database connections remains untested because all database tests use PGlite. Cold builds still depend on the existing Google font setup; verification uses local cached font fixtures without changing the product font setup. No live identity provider or database connection was used during P3.
 
 ## Services
 

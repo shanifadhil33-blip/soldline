@@ -401,6 +401,8 @@ export const external_effects = pgTable('external_effects', {
   attempts: integer('attempts'),
   last_error_code: text('last_error_code'),
   reversibility: text('reversibility', { enum: ['reversible', 'cancellable', 'irreversible'] }),
+  parent_effect_id: uuid('parent_effect_id'),
+  result: jsonb('result'),
   compensates_effect_id: uuid('compensates_effect_id')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
   check('external_effects_state_check', sql`${t.state} in ('planned', 'in_flight', 'succeeded', 'failed', 'unknown', 'compensated', 'cancelled')`),
@@ -444,14 +446,14 @@ export const jobs = pgTable('jobs', {
   payload: jsonb('payload'),
   run_id: uuid('run_id'),
   dedupe_key: text('dedupe_key'),
-  status: text('status', { enum: ['queued', 'running', 'done', 'failed', 'dead'] }),
+  status: text('status', { enum: ['queued', 'running', 'done', 'failed', 'dead', 'cancelled'] }),
   attempts: integer('attempts'),
   max_attempts: integer('max_attempts').default(5),
   next_attempt_at: timestamp('next_attempt_at', { withTimezone: true, mode: 'string' }),
   locked_until: timestamp('locked_until', { withTimezone: true, mode: 'string' }),
   last_error_code: text('last_error_code')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
-  check('jobs_status_check', sql`${t.status} in ('queued', 'running', 'done', 'failed', 'dead')`),
+  check('jobs_status_check', sql`${t.status} in ('queued', 'running', 'done', 'failed', 'dead', 'cancelled')`),
   unique('jobs_workspace_id_id').on(t.workspace_id, t.id),
   unique('jobs_dedupe_key_unique').on(t.workspace_id, t.dedupe_key),
   index('jobs_ready').on(t.next_attempt_at).where(sql`${t.status} in ('queued','running','failed')`),
