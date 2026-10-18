@@ -1,0 +1,77 @@
+import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { http, HttpResponse } from 'msw';
+import { server } from './fixtures/http';
+import { createDatabase, fixture, id } from './helpers/pglite';
+import { harbor } from './fixtures/harbor';
+import { scopeStore } from '../src/server/scope/store';
+import { jobStore, type Job } from '../src/server/jobs/store';
+import { openTaskCounts } from '../src/server/scope/workload';
+import { encryptToken } from '../src/server/crypto';
+import { verifyChain } from '../src/server/audit';
+let ctx:Awaited<ReturnType<typeof createDatabase>>;
+const a=fixture(1), b=fixture(2), bytes=readFileSync('tests/fixtures/harbor-scope.pdf');
+beforeAll(async()=>{
+  ctx=await createDatabase();
+  const input=await harbor();
+  await ctx.db.query('UPDATE deals SET contract_start_date=$2 WHERE id=$1',[id(1,20),input.start]);
+  await ctx.db.query('DELETE FROM line_items WHERE workspace_id=$1',[a.ws]);
+  for(const l of input.lines) await ctx.db.query('INSERT INTO line_items(workspace_id,deal_id,name) VALUES($1,$2,$3)',[a.ws,id(1,20),l.title]);
+  await ctx.db.query('DELETE FROM deliverable_mappings WHERE workspace_id=$1',[a.ws]);
+  for(const m of input.mappings) await ctx.db.query("INSERT INTO deliverable_mappings(workspace_id,match_title_normalised,synonyms,template_list,task_title,default_role,estimate_minutes,due_offset_days,clickup_list_id,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'fixture','active')",[a.ws,m.title,JSON.stringify(m.synonyms),m.list,m.taskTitle,m.role,m.estimate,m.offset]);
+  await ctx.db.query('UPDATE members SET clickup_user_id=$2 WHERE id=$1',[a.contributor,'17']);
+  vi.stubEnv('TOKEN_ENC_KEY',Buffer.alloc(32,8).toString('base64'));
+  await ctx.db.query("INSERT INTO connections(workspace_id,provider,status,token_ciphertext) VALUES($1,'clickup','connected',$2)",[a.ws,encryptToken('fixture')]);
+  await scopeStore(ctx.db).saveDocument(a.ws,id(1,50),bytes);
+},60000);
+afterAll(async()=>{vi.unstubAllEnvs();await ctx?.db.close();});
+function workload() {server.use(http.get('https://api.clickup.com/api/v2/list/fixture/task',()=>HttpResponse.json({tasks:[{id:'open',assignees:[{id:17}],status:{type:'open'}},{id:'closed',assignees:[{id:17}],status:{type:'closed'}}],last_page:true})));}
+it('Refuses a document in another workspace without changing it',async()=>{
+  await expect(scopeStore(ctx.db).saveDocument(b.ws,id(1,50),bytes)).rejects.toThrow('Signed scope not found');
+  expect((await ctx.db.query<{pages:unknown}>('SELECT pages FROM scope_documents WHERE id=$1',[id(2,50)])).rows[0].pages).toBeNull();
+});
+it('Reads ClickUp open tasks through MSW and excludes closed tasks',async()=>{workload();expect(await openTaskCounts(ctx.db,a.ws,['fixture'])).toEqual({'17':1});});
+it('Does not propose from a failed or incomplete ClickUp read',async()=>{
+  server.use(http.get('https://api.clickup.com/api/v2/list/fixture/task',()=>new HttpResponse(null,{status:503})));
+  await expect(openTaskCounts(ctx.db,a.ws,['fixture'])).rejects.toThrow('ClickUp workload needs attention');
+});
+it('Runs the analyse job handler without a member and stores the exact findings, draft scope and plan',async()=>{
+  workload();
+  const job:Job={id:id(1,72),workspace_id:a.ws,kind:'analyse_deal',payload:{dealId:'0'},run_id:null,attempts:1,lock_token:'fixture'};
+  const input=await harbor();
+  await ctx.db.query("UPDATE scope_versions SET items_hash='fixture_scope_hash',status='accepted' WHERE id=$1",[id(1,51)]);
+  const runId=id(1,80);
+  await ctx.db.query("INSERT INTO runs(id,workspace_id,deal_id,run_key,status) VALUES($1,$2,$3,'deal:0:won:fixture_scope_hash','received')",[runId,a.ws,id(1,20)]);
+  for(const i of input.inputs) await ctx.db.query('INSERT INTO onboarding_inputs(workspace_id,run_id,key,label,status,evidence) VALUES($1,$2,$3,$4,$5,$6)',[a.ws,runId,i.key,i.label,i.received?'received':'missing',JSON.stringify(i.evidence)]);
+  const start=Number((await ctx.db.query<{n:string}>('SELECT max(id) AS n FROM audit_log')).rows[0].n);
+  expect(await jobStore(ctx.db).analyse(job)).toBe(runId);
+  const findings=(await ctx.db.query<{severity:string;title:string}>('SELECT severity,title FROM findings WHERE run_id=$1 ORDER BY title',[runId])).rows;
+  expect(findings).toHaveLength(5);
+  expect(findings.filter(f=>f.severity==='block')).toHaveLength(4);
+  expect(findings.filter(f=>f.severity==='warn').map(f=>f.title)).toEqual(['No Meta ad account access yet.']);
+  const plan=(await ctx.db.query<{plan:{tasks:unknown[]}}>('SELECT plan FROM runs WHERE id=$1',[runId])).rows[0].plan;
+  expect(plan.tasks).toHaveLength(8);
+  const run=(await ctx.db.query<{status:string;plan_hash:string;scope_version_id:string}>('SELECT * FROM runs WHERE id=$1',[runId])).rows[0];
+  expect(run.status).toBe('blocked');expect(run.plan_hash).toMatch(/^[0-9a-f]{64}$/);
+  const items=(await ctx.db.query<{source_page:number;source_quote:string}>('SELECT * FROM scope_items WHERE scope_version_id=$1',[run.scope_version_id])).rows;
+  expect(items).toHaveLength(8);expect(items.every(i=>i.source_page===2&&input.pages[1].text.includes(i.source_quote))).toBe(true);
+  expect((await ctx.db.query<{status:string}>('SELECT status FROM scope_versions WHERE id=$1',[run.scope_version_id])).rows[0].status).toBe('draft');
+  const audit=(await ctx.db.query<{action:string;actor_type:string}>('SELECT action,actor_type FROM audit_log WHERE workspace_id=$1 AND id>$2',[a.ws,start])).rows;
+  expect(audit.every(r=>r.actor_type==='system')).toBe(true);
+  expect(audit.filter(r=>r.action==='scope_item_created')).toHaveLength(8);
+  expect(audit.filter(r=>r.action==='finding_created')).toHaveLength(5);
+  expect(audit.filter(r=>r.action==='plan_proposed')).toHaveLength(1);
+  expect((await verifyChain(ctx.db,a.ws)).ok).toBe(true);
+  const count=(await ctx.db.query('SELECT count(*) FROM audit_log')).rows;
+  await scopeStore(ctx.db).analyseRun(a.ws,runId);
+  expect((await ctx.db.query('SELECT count(*) FROM audit_log')).rows).toEqual(count);
+  await expect(ctx.asMember(a.admin,db=>db.query("UPDATE runs SET plan_hash='changed' WHERE id=$1",[runId]))).rejects.toThrow();
+});
+it('Stops ClickUp reads after a 401 and records the reconnect state',async()=>{
+  let calls=0;
+  server.use(http.get('https://api.clickup.com/api/v2/list/fixture/task',()=>{calls++;return new HttpResponse(null,{status:401});}));
+  await expect(openTaskCounts(ctx.db,a.ws,['fixture'])).rejects.toThrow();
+  expect((await ctx.db.query<{status:string}>("SELECT status FROM connections WHERE workspace_id=$1 AND provider='clickup'",[a.ws])).rows[0].status).toBe('needs_reconnect');
+  await expect(openTaskCounts(ctx.db,a.ws,['fixture'])).rejects.toThrow('ClickUp connection needs attention');
+  expect(calls).toBe(1);
+});

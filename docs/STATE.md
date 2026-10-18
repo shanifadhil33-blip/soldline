@@ -30,9 +30,13 @@ Replay uses the stored raw event and the same event handler with replay provenan
 
 The GitHub tick workflow and the Vercel daily cron are present. Daily queues reconciliation and a HubSpot search for keep alive. P5 verification passes 333 tests across 20 files. The final gate passes lint, types, tests and production build with exit code 0. See docs/P5.md for files, signature proof, setup and verification limits.
 
+P6 adds PDF parsing through unpdf on Node v22.23.3, page quotes, a deterministic English and Arabic scope parser, a validated AI chain, pure comparison rules, evidence, and delivery proposals. The Harbor fixture produces exactly four block findings for sold deliverables missing from HubSpot and the warning No Meta ad account access yet. Its plan contains eight tasks. Invented quotes, wrong pages and invented titles with real quotes are dropped. A client instruction creates an unusual instruction finding and changes no task or normal finding.
+
+System analysis uses private named owner operations. Each scope version, item, finding and plan update writes a system audit row. New migrations add page text, cadence, mapping synonyms, offsets, ClickUp list references and a contract start date. Scope versions remain draft for P7. ClickUp workload reads use shared token buckets and MSW fixtures in tests. The queue core and permissions are unchanged. P6 verification passes 361 tests across 22 files, including 28 new tests. The gate passes lint, types, tests and the production build with exit code 0. See docs/P6.md for exact findings, tasks, files and verification limits.
+
 ## Next
 
-P6 scope document parsing and analysis. Continue using local fixtures until live service work is explicitly requested.
+P7 approvals engine. Continue using local fixtures until live service work is explicitly requested.
 
 ## Decisions
 
@@ -60,9 +64,11 @@ Contributor scope suggestions and client scope requests use an explicit intent a
 
 ## Parked
 
+P6 leaves automatic signed file retrieval parked with the existing unverified HubSpot file URL contract. The named scope ingestion operation accepts the PDF bytes and stores numbered page text. Analysis consumes the local HubSpot line item mirror and supplied onboarding records. The earlier sandbox seed retains its placeholder data and was outside this phase. A full run detail screen and elapsed demo UI timing remain unverified. Contract start dates and mapping ClickUp list ids need explicit configuration. AI adapters require named compatible endpoint settings and have only been exercised with MSW. P7 owns acceptance of draft scope versions and real approval writes.
+
 P5 needs deployment settings before external scheduling: TICK_URL and TICK_SECRET in GitHub secrets, TICK_SECRET on the app, and CRON_SECRET for the daily Vercel bearer. HUBSPOT_APP_CLIENT_SECRET must match the webhook app. Each HubSpot connection needs won_stage_id and should name delivery_lead_id. These were not configured remotely. The requested unit tests skill is absent, so P5 used the existing Vitest, MSW and PGlite setup directly.
 
-The current shell still reports Node 20.19.2 on PATH despite the P5 runtime note naming Node 22.23. No runtime installation or PATH change was made. P6 must verify unpdf with the intended runtime. Production webhook response latency and database concurrency across separate connections remain unverified locally.
+P6 verified unpdf with Node v22.23.3 by putting the supplied local runtime first on PATH for every shell command. Production webhook response latency and database concurrency across separate connections remain unverified locally.
 
 
 UNVERIFIED mail paths below all require confirmation against the live inbox API before P8. They live in the single MAIL_PATHS block in src/server/integrations/mail.ts. Query filters, response fields and reply draft mapping are also provisional fixture contracts.
@@ -85,7 +91,7 @@ TODO UNVERIFIED seed paths for company, contact, product and line item search an
 
 MAIL_API_BASE defaults to `https://api.agentmail.to/v0`. MAIL_API_KEY supplies Bearer authentication and MAIL_INBOX_ADDRESS identifies `adhil+bilal@mail.grokbot.com`. Explicit admin setup encrypts the key before client use. TOKEN_ENC_KEY must be exactly 32 bytes encoded as base64. No environment file was opened or edited. Adding MAIL_API_BASE to the example file remains outside the shared boundary on environment files.
 
-The existing unpdf version needs Iterator support that this Node 20 runtime does not provide. P4 validates the actual generated PDF text streams through pdf lib. The general PDF parser runtime belongs to P6 and was not changed.
+P6 resolves the earlier unpdf runtime limit with the supplied Node 22 runtime and tests the actual three page PDF with unpdf. No runtime was installed.
 
 HubSpot approval checks read the current modified time and the approved values before a write. The provider offers no confirmed conditional write mechanism in the supplied notes. A remote change between that read and patch remains a provider concurrency limit to confirm before the real approval engine.
 

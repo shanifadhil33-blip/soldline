@@ -2,5 +2,6 @@
   "landing": {
     "headline": "Every deliverable you sell gets an owner, a deadline and an approval.",
     "status": "Soldline is being set up."
-  }
+  },
+  "ai_unavailable": "The document could not be read right now. Try again later."
 }

@@ -134,6 +134,7 @@ export const connections = pgTable('connections', {
 ]);
 
 export const deals = pgTable('deals', {
+  contract_start_date: date('contract_start_date'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   client_company_id: uuid('client_company_id').notNull(),
@@ -156,6 +157,7 @@ export const deals = pgTable('deals', {
 ]);
 
 export const line_items = pgTable('line_items', {
+  cadence: text('cadence', { enum: ['once', 'monthly', 'weekly'] }),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   deal_id: uuid('deal_id').notNull(),
@@ -173,6 +175,7 @@ export const line_items = pgTable('line_items', {
 ]);
 
 export const scope_documents = pgTable('scope_documents', {
+  pages: jsonb('pages'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   deal_id: uuid('deal_id').notNull(),
@@ -235,6 +238,9 @@ export const scope_items = pgTable('scope_items', {
 ]);
 
 export const deliverable_mappings = pgTable('deliverable_mappings', {
+  synonyms: jsonb('synonyms').notNull().default([]),
+  due_offset_days: integer('due_offset_days').notNull().default(0),
+  clickup_list_id: text('clickup_list_id'),
   id: uuid('id').defaultRandom().primaryKey(),
   workspace_id: uuid('workspace_id').notNull(),
   match_sku: text('match_sku'),

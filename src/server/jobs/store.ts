@@ -1,4 +1,5 @@
 import 'server-only';
+import { scopeStore } from '../scope/store';
 import { createHash, randomUUID } from 'node:crypto';
 import type { SqlConnection, TransactionDriver } from '../db/withMember';
 import { hubspotEvent, type HubspotEvent, type ReceivedVia } from '../events/model';
@@ -113,8 +114,8 @@ export function jobStore(owner: TransactionDriver) {
         await systemAudit(db,ws,'system','deal_imported',deal.id);
       });
     },
-    analyse(job: Job) {
-      return owner.transaction(async db => {
+    async analyse(job: Job) {
+      const runId = await owner.transaction(async db => {
         const ws=job.workspace_id;
         const dealRows=await db.query<{id:string}>(`SELECT id FROM deals WHERE workspace_id=$1 AND hubspot_deal_id=$2 FOR UPDATE`,[ws,job.payload.dealId]);
         const deal=dealRows.rows[0];
@@ -134,6 +135,8 @@ export function jobStore(owner: TransactionDriver) {
         await systemAudit(db,ws,'system',r.rows.length?'run_received':'run_reused',run.id);
         return run.id;
       });
+      await scopeStore(owner).analyseRun(job.workspace_id,runId);
+      return runId;
     },
     connection(ws: string, id: string) { return owner.transaction(async db=>(await db.query<Connection>("SELECT * FROM connections WHERE workspace_id=$1 AND id=$2 AND status='connected'",[ws,id])).rows[0]); },
     saveReconcile(connection: Connection, events: HubspotEvent[], cursor: string) {
