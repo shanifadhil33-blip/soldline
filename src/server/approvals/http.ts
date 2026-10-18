@@ -16,6 +16,7 @@ export async function approvalRoute(request:Request,context:RouteContext,operati
   const lookup=await withMember(getAppDriver(),member.id,async db=>{
     try {
       if(operation==='plan') {
+        guard(member,'approve_plan',{id,workspace_id:member.workspace_id});
         const run=(await db.query<{id:string;workspace_id:string}>('SELECT id,workspace_id FROM runs WHERE id=$1',[id])).rows[0];
         if(!run) return {status:404,message:'Run not found'};
         guard(member,'approve_plan',run);

@@ -10,7 +10,8 @@ import { randomUUID } from 'node:crypto';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { drizzle } from 'drizzle-orm/pg-proxy';
 import type { Adapter } from 'next-auth/adapters';
-import type { Member } from '../permissions';
+import { can, type Member } from '../permissions';
+import { verifyChain } from '../audit';
 import type { SqlConnection, TransactionDriver } from './withMember';
 import { authTables } from './authSchema';
 import { demoStore } from '../demo/store';
@@ -63,6 +64,17 @@ export function ownerServices(owner: TransactionDriver) {
   };
   return {
     monitors: monitorStore(owner), memory: memoryStore(owner), recovery: recoveryStore(owner), approvals: approvalStore(owner), scope: scopeStore(owner), demo: demoStore(owner), authAdapter, jobs: jobStore(owner), providers: systemProviders(owner),
+    async auditRun(member:Member,runId:string) {
+      return owner.transaction(async db=>{
+        const actor=(await db.query<Member & Record<string,unknown>>("SELECT m.*,w.is_demo FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE m.workspace_id=$1 AND m.id=$2 AND m.archived_at IS NULL AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())",[member.workspace_id,member.id])).rows[0];
+        if(!actor) return null;
+        const run=(await db.query<{workspace_id:string;owner_member_id:string|null}>("SELECT r.workspace_id,CASE WHEN ($3 AND r.delivery_lead_id=$4::uuid) OR ($5 AND d.owner_member_id=$4::uuid) THEN $4::uuid END AS owner_member_id FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 AND r.id=$2",[actor.workspace_id,runId,actor.roles.includes('delivery_lead'),actor.id,actor.roles.includes('account_manager')])).rows[0];
+        if(!run||!can(actor,'read_audit',run)) return null;
+        const chain=await verifyChain(db,actor.workspace_id);
+        const rows=(await db.query(`SELECT a.* FROM audit_log a WHERE a.workspace_id=$1 AND (a.target_id=$2::text OR a.approval_id IN (SELECT id FROM approvals WHERE workspace_id=$1 AND run_id=$2::uuid) OR a.target_id IN (SELECT v.id::text FROM scope_versions v JOIN runs r ON r.workspace_id=v.workspace_id AND r.deal_id=v.deal_id WHERE r.workspace_id=$1 AND r.id=$2::uuid UNION SELECT id::text FROM approvals WHERE workspace_id=$1 AND run_id=$2::uuid UNION SELECT id::text FROM jobs WHERE workspace_id=$1 AND run_id=$2::uuid UNION SELECT id::text FROM external_effects WHERE workspace_id=$1 AND run_id=$2::uuid UNION SELECT id::text FROM findings WHERE workspace_id=$1 AND run_id=$2::uuid UNION SELECT id::text FROM inbound_events WHERE workspace_id=$1 AND run_id=$2::uuid)) ORDER BY a.id`,[actor.workspace_id,runId])).rows;
+        return {chain,rows};
+      });
+    },
     async sessionMember(token: string): Promise<Member | null> {
       return owner.transaction(async db => {
         const result = await db.query<Member & Record<string, unknown>>(`SELECT m.id,m.workspace_id,m.display_name,m.roles,m.client_company_id,false AS is_demo FROM sessions s JOIN members m ON m.user_id=s.user_id AND m.workspace_id=s.workspace_id JOIN workspaces w ON w.id=m.workspace_id WHERE s.session_token=$1 AND s.expires > now() AND m.archived_at IS NULL AND coalesce(w.is_demo,false)=false`, [token]);

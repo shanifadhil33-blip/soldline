@@ -1,5 +1,5 @@
 export const day = 86400000;
-export type Candidate = { key: string; kind: 'missing_input'|'overdue_client_approval'|'deadline_risk'|'no_owner'|'scope_change_request'; severity: 'warn'|'block'; title: string; clientFacing: boolean; observedAt: string; quote?: string; memoryIds?:string[] };
+export type Candidate = { key: string; kind: 'missing_input'|'overdue_client_approval'|'deadline_risk'|'no_owner'|'scope_change_request'|'unusual_instruction'; severity: 'warn'|'block'; title: string; clientFacing: boolean; observedAt: string; quote?: string; memoryIds?:string[] };
 export function missingInput(id: string, requested: string|null, blocking: boolean, now: number): Candidate|null {
   const age = requested ? now - Date.parse(requested) : 0;
   return age > 3 * day ? {key:'input:'+id,kind:'missing_input',severity:blocking && age > 7 * day ? 'block':'warn',title:'Client input is still missing',clientFacing:true,observedAt:requested!} : null;

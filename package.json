@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:live": "node scripts/test-live.mjs",
     "build": "next build",
     "gate": "node scripts/gate.mjs",
     "db:migrate": "node scripts/migrate.mjs"

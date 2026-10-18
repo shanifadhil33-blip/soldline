@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { http, HttpResponse } from 'msw';
 import { server } from './fixtures/http';
 import { createDatabase, fixture, id } from './helpers/pglite';
@@ -39,9 +40,11 @@ it('Runs the analyse job handler without a member and stores the exact findings,
   workload();
   const job:Job={id:id(1,72),workspace_id:a.ws,kind:'analyse_deal',payload:{dealId:'0'},run_id:null,attempts:1,lock_token:'fixture'};
   const input=await harbor();
-  await ctx.db.query("UPDATE scope_versions SET items_hash='fixture_scope_hash',status='accepted' WHERE id=$1",[id(1,51)]);
+  // This case proves first analysis. Later versions require an executed scope change.
+  await ctx.db.query('DELETE FROM scope_items WHERE scope_version_id=$1',[id(1,51)]);
+  await ctx.db.query('DELETE FROM scope_versions WHERE id=$1',[id(1,51)]);
   const runId=id(1,80);
-  await ctx.db.query("INSERT INTO runs(id,workspace_id,deal_id,run_key,status) VALUES($1,$2,$3,'deal:0:won:fixture_scope_hash','received')",[runId,a.ws,id(1,20)]);
+  await ctx.db.query("INSERT INTO runs(id,workspace_id,deal_id,run_key,status) VALUES($1,$2,$3,$4,'received')",[runId,a.ws,id(1,20),'deal:0:won:'+createHash('sha256').update('pending').digest('hex')]);
   for(const i of input.inputs) await ctx.db.query('INSERT INTO onboarding_inputs(workspace_id,run_id,key,label,status,evidence) VALUES($1,$2,$3,$4,$5,$6)',[a.ws,runId,i.key,i.label,i.received?'received':'missing',JSON.stringify(i.evidence)]);
   const start=Number((await ctx.db.query<{n:string}>('SELECT max(id) AS n FROM audit_log')).rows[0].n);
   expect(await jobStore(ctx.db).analyse(job)).toBe(runId);
@@ -66,6 +69,18 @@ it('Runs the analyse job handler without a member and stores the exact findings,
   await scopeStore(ctx.db).analyseRun(a.ws,runId);
   expect((await ctx.db.query('SELECT count(*) FROM audit_log')).rows).toEqual(count);
   await expect(ctx.asMember(a.admin,db=>db.query("UPDATE runs SET plan_hash='changed' WHERE id=$1",[runId]))).rejects.toThrow();
+});
+it('Analysis reuses the existing accepted scope and cannot write a later draft',async()=>{
+  workload();
+  await ctx.db.query("UPDATE scope_versions SET status='accepted' WHERE workspace_id=$1 AND deal_id=$2",[a.ws,id(1,20)]);
+  const before=(await ctx.db.query<{id:string}>('SELECT * FROM scope_versions WHERE workspace_id=$1 AND deal_id=$2 ORDER BY version',[a.ws,id(1,20)])).rows;
+  const items=(await ctx.db.query('SELECT * FROM scope_items WHERE workspace_id=$1 ORDER BY id',[a.ws])).rows;
+  const next=id(1,81);
+  await ctx.db.query("INSERT INTO runs(id,workspace_id,deal_id,run_key,status) VALUES($1,$2,$3,'another received run','received')",[next,a.ws,id(1,20)]);
+  await scopeStore(ctx.db).analyseRun(a.ws,next);
+  expect((await ctx.db.query('SELECT * FROM scope_versions WHERE workspace_id=$1 AND deal_id=$2 ORDER BY version',[a.ws,id(1,20)])).rows).toEqual(before);
+  expect((await ctx.db.query('SELECT * FROM scope_items WHERE workspace_id=$1 ORDER BY id',[a.ws])).rows).toEqual(items);
+  expect((await ctx.db.query<{scope_version_id:string}>('SELECT scope_version_id FROM runs WHERE id=$1',[next])).rows[0].scope_version_id).toBe(before[0].id);
 });
 it('Stops ClickUp reads after a 401 and records the reconnect state',async()=>{
   let calls=0;

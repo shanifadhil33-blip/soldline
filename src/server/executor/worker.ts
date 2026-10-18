@@ -133,6 +133,7 @@ async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:str
     const sent=await providers.mail().sendDraft(draft.draft_id);
     await store.set(e,'succeeded',{...observation,draft_id:draft.draft_id},sent.message_id);return;
   }
+  if(e.system==='soldline' && e.action==='accept_scope_change') {await store.scopeChange(e);return;}
   if(e.system==='soldline' && e.action==='create_recovery') {
     const title=z.string().parse(fields.title),member=z.uuid().parse(fields.owner_member_id);
     const id=await store.lineRecovery(e,title,member);await store.set(e,'succeeded',{},id);return;

@@ -52,9 +52,10 @@ export function scopeStore(owner:TransactionDriver) {
           return;
         }
         await db.query('SELECT id FROM deals WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[ws,data.run.deal_id]);
-        const version=(await db.query<{id:string}>(`INSERT INTO scope_versions(workspace_id,deal_id,version,status,source_document_id,items_hash) SELECT $1,$2,coalesce(max(version),0)+1,'draft',$3,$4 FROM scope_versions WHERE workspace_id=$1 AND deal_id=$2 RETURNING id`,[ws,data.run.deal_id,data.doc.id,hash(result.items)])).rows[0].id;
-        await systemAudit(db,ws,'system','scope_version_created',version);
-        for(const [index,item] of result.items.entries()) {
+        const existing=(await db.query<{id:string}>('SELECT id FROM scope_versions WHERE workspace_id=$1 AND deal_id=$2 ORDER BY version DESC LIMIT 1',[ws,data.run.deal_id])).rows[0];
+        const version=existing?.id??(await db.query<{id:string}>(`INSERT INTO scope_versions(workspace_id,deal_id,version,status,source_document_id,items_hash) VALUES($1,$2,1,'draft',$3,$4) RETURNING id`,[ws,data.run.deal_id,data.doc.id,hash(result.items)])).rows[0].id;
+        if(!existing) await systemAudit(db,ws,'system','scope_version_created',version);
+        for(const [index,item] of (existing?[]:result.items).entries()) {
           await db.query('INSERT INTO scope_items(workspace_id,scope_version_id,key,title,quantity,cadence,source_page,source_quote,method) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',[ws,version,String(index+1),item.title,item.quantity,item.cadence,item.page,item.quote,result.method]);
           await systemAudit(db,ws,'system','scope_item_created',version,{key:String(index+1)});
         }

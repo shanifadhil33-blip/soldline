@@ -3,6 +3,7 @@ import type { SqlConnection, TransactionDriver } from '../db/withMember';
 import { systemAudit } from '../jobs/store';
 import { WorkerConnections } from '../jobs/providers';
 import { ClickUpClient } from '../integrations/clickup';
+import { instructions } from '../scope/parser';
 import { classifyScopeEmail } from './classifier';
 import { missingInput, taskFindings, type Candidate } from './rules';
 import { notifyBlock, notificationStore } from '../notifications';
@@ -69,12 +70,16 @@ export function monitorStore(owner:TransactionDriver) {
           for(const task of tasks) for(const c of taskFindings({id:task.task_id,status:task.status,reviewSince:task.review_since,due:task.due_at,closed:task.closed},now,run.timezone,run.working_days)) await save(c);
           const unowned=(await db.query<{id:string}>(`SELECT s.id FROM scope_items s JOIN scope_versions v ON v.workspace_id=s.workspace_id AND v.id=s.scope_version_id WHERE v.workspace_id=$1 AND v.id=$2 AND v.status='accepted' AND NOT EXISTS(SELECT 1 FROM monitor_tasks t WHERE t.workspace_id=$1 AND t.run_id=$3 AND t.scope_item_id=s.id AND cardinality(t.assignee_ids)>0)`,[ws,run.scope_version_id,run.id])).rows;
           for(const item of unowned) await save({key:'owner:'+item.id,kind:'no_owner',severity:'warn',title:'A scope item needs an assigned task',clientFacing:false,observedAt:new Date(now).toISOString()});
-          const cleared=(await db.query<{id:string}>(`UPDATE findings SET status='resolved',resolution='The watched condition has cleared',resolved_at=$4 WHERE workspace_id=$1 AND run_id=$2 AND monitor_key IS NOT NULL AND kind<>'scope_change_request' AND status='open' AND NOT (monitor_key=ANY($3::text[])) RETURNING id`,[ws,run.id,active,new Date(now).toISOString()])).rows;
+          const cleared=(await db.query<{id:string}>(`UPDATE findings SET status='resolved',resolution='The watched condition has cleared',resolved_at=$4 WHERE workspace_id=$1 AND run_id=$2 AND monitor_key IS NOT NULL AND kind NOT IN ('scope_change_request','unusual_instruction') AND status='open' AND NOT (monitor_key=ANY($3::text[])) RETURNING id`,[ws,run.id,active,new Date(now).toISOString()])).rows;
           for(const finding of cleared) {
             await db.query("UPDATE recovery_items SET status='resolved',resolution_note='The watched condition has cleared' WHERE workspace_id=$1 AND finding_id=$2 AND kind='monitor' AND status='open'",[ws,finding.id]);
             await systemAudit(db,ws,'schedule','monitor_condition_cleared',finding.id);
           }
-          for(const message of classified.filter(m=>m.run_id===run.id)) await record(db,run,{key:'mail:'+message.id,kind:'scope_change_request',severity:'warn',title:'The client asked for a scope change',clientFacing:true,quote:message.quote,memoryIds:message.memoryIds,observedAt:message.received_at});
+          for(const message of classified.filter(m=>m.run_id===run.id)) {
+            await record(db,run,{key:'mail:'+message.id,kind:'scope_change_request',severity:'warn',title:'The client asked for a scope change',clientFacing:true,quote:message.quote,memoryIds:message.memoryIds,observedAt:message.received_at});
+            const unusual=instructions([{page:1,text:message.raw.text??''}]);
+            if(unusual.length) await record(db,run,{key:'instruction:'+message.id,kind:'unusual_instruction',severity:'warn',title:'Unusual instruction in client text.',clientFacing:true,quote:unusual.map(i=>i.quote).join('. '),observedAt:message.received_at});
+          }
         }
       });
       await notificationStore(owner).digest(ws,now);
