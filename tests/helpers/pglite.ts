@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { migrate } from '../../src/server/db/migrate';
 import { withMember, type SqlConnection } from '../../src/server/db/withMember';
 
-export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications','demo_faults','rate_buckets','monitor_tasks','sample_mail','demo_resources'] as const;
+export const tables = ['workspaces','users','accounts','sessions','verification_tokens','members','client_companies','connections','deals','line_items','scope_documents','scope_versions','scope_items','deliverable_mappings','memories','runs','onboarding_inputs','findings','approvals','external_effects','inbound_events','jobs','recovery_items','audit_log','agent_threads','agent_messages','notifications','demo_faults','rate_buckets','monitor_tasks','sample_mail','demo_resources','agent_cards','mcp_tokens','agent_ai_usage','feedback'] as const;
 export const roles = ['admin','account_manager','delivery_lead','contributor','client_reviewer'] as const;
 export function id(group: number, value: number) { return `00000000-0000-4000-8000-${String(group * 1000 + value).padStart(12, '0')}`; }
 export const fixture = (g: number) => ({ ws: id(g,1), companyA: id(g,2), companyB: id(g,3), admin: id(g,10), manager: id(g,11), lead: id(g,12), contributor: id(g,13), reviewer: id(g,14), other: id(g,15), archived: id(g,16), runA: id(g,30), runB: id(g,31), runOther: id(g,32), thread: id(g,60) });
@@ -52,6 +52,10 @@ export async function createDatabase() {
       await insert('agent_threads', { id: thread, member_id: member });
       await insert('agent_messages', { thread_id: thread, member_id: member, role: 'user', body: 'Ready' });
       await insert('notifications', { member_id: member, body: 'Ready' });
+      await insert('agent_cards', {member_id:member,thread_id:thread,draft:'{}'});
+      await insert('mcp_tokens', {member_id:member,name:'Fixture',token_hash:member});
+      await insert('agent_ai_usage', {member_id:member,calls:0});
+      await insert('feedback', {member_id:member,message:'Fixture feedback',page_path:'/',app_version:'fixture'});
     }
     await insert('approvals', { id: id(group,70), run_id: f.runA, kind: 'provision' });
     await insert('external_effects', { id: id(group,71), run_id: f.runA, approval_id: id(group,70), effect_key: `effect${group}` });

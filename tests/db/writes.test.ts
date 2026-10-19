@@ -9,8 +9,8 @@ it('Guards every public table write privilege through the catalog', async () => 
   const result = await context.db.query<{ relname: string; insert_ok: boolean; update_ok: boolean; delete_ok: boolean }>(`SELECT c.relname,has_table_privilege('soldline_app',c.oid,'INSERT') AS insert_ok,has_table_privilege('soldline_app',c.oid,'UPDATE') AS update_ok,has_table_privilege('soldline_app',c.oid,'DELETE') AS delete_ok FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p')`);
   expect(result.rows.map(row => row.relname).sort()).toEqual([...tables].sort());
   for (const row of result.rows) {
-    expect(row.insert_ok, row.relname).toBe(['onboarding_inputs','sample_mail','demo_resources'].includes(row.relname));
-    expect(row.update_ok, row.relname).toBe(['onboarding_inputs','sample_mail','demo_resources'].includes(row.relname));
+    expect(row.insert_ok, row.relname).toBe(['onboarding_inputs','sample_mail','demo_resources','agent_cards','agent_ai_usage','agent_threads','agent_messages','mcp_tokens','feedback'].includes(row.relname));
+    expect(row.update_ok, row.relname).toBe(['onboarding_inputs','sample_mail','demo_resources','agent_cards','agent_ai_usage','agent_threads','agent_messages'].includes(row.relname));
     expect(row.delete_ok, row.relname).toBe(false);
   }
   expect((await context.db.query("SELECT policyname,with_check FROM pg_policies WHERE tablename='onboarding_inputs' AND policyname IN ('input_insert_guard','input_update_guard')")).rows).toHaveLength(2);

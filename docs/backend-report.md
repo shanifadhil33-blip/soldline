@@ -175,3 +175,22 @@ Mail defaults to the database SampleInboxProvider. AgentMail worker and executor
 New migration: drizzle/sql/0012_demo_backend.sql. Apply it before deploying. Local verification uses MSW and PGlite only; no external provider call or migration was run.
 
 Configured line item control reads the upstream item and requires exactly one deal association matching the sandbox deal before patching quantity. It refuses the seeded base deal. Plain sample line items are changed locally and labelled as sample. The source file inventory and test details are in docs/P14a.md.
+
+## P14b backend A5
+
+`POST /api/agent/messages` reads permitted member records and private active memory, saves a private conversation, and optionally builds one of four action drafts from permitted data or accepts an exact structured card. AI is restricted to wording through free providers with a member daily quota and a shared sandbox daily quota. Every provider attempt consumes the quota. Data templates remain available without providers.
+`GET /api/agent/threads` lists the caller's conversations.
+`GET /api/agent/threads/[id]` returns only the caller's conversation and cards. Foreign identifiers return a neutral 404.
+`POST /api/agent/cards/[id]` revises a draft with Change or atomically requests a normal approval with Yes. Repeated Yes returns the same approval. Approval insertion invokes the P14a approver notifications. Neither path decides or executes approvals. An eventual human approved recovery retry runs through the normal executor and delegates to the existing recovery store, with atomic retry idempotence and current permission checks.
+`GET /api/settings` reads caller preferences.
+`PATCH /api/settings` validates and saves preferred name, language, digest time, agent name and voice.
+`GET /api/settings/company` reads company settings for an Agency director.
+`PATCH /api/settings/company` validates company settings and the workspace delivery lead. Refusals append audit rows.
+`POST /api/mcp` accepts authenticated JSON RPC initialize, tools/list and tools/call. Tools are list_runs, get_run, list_findings and propose_plan_correction. Tool access uses member row security and assertCan. Client responses contain company scoped deliverables and inputs. Each bearer token has a locked sixty requests per minute counter.
+`POST /api/mcp/tokens` creates a named token, returns the secret once and persists only SHA256.
+`GET /api/mcp/tokens` lists metadata without the hash or secret.
+`DELETE /api/mcp/tokens/[id]` revokes only a caller owned token.
+`POST /api/feedback` stores signed member and demo feedback with optional png, jpeg or webp bytes after size, declared type and signature validation. JSON base64 and multipart upload are supported. Nothing is emailed.
+`GET /api/feedback` lists workspace feedback for an Agency director.
+
+The existing `GET /api/memory` and `POST /api/memory` now share organisation notes across staff, activate small notes immediately, and keep consequential lessons pending Agency director review. Organisation memory remains hidden from client reviewers. Forget physically removes personal memories and private conversations including cards and messages, while keeping organisation memory and the audit chain. New schema and write grants live exclusively in migration 0013_agent_backend.sql. No screen or visual change was made.

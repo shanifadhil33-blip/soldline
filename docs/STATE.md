@@ -164,3 +164,7 @@ Tick and daily jobs queue expired sandbox cleanup with a five sandbox cap. Clean
 Open: live acceptance and deployment migration remain for the reviewer. No live provider or database call was made. Agent, memory, settings, MCP, Help and feedback remain outside this backend chunk. No visual changes or new screens were made.
 
 P14a verification: Node v22.23.3, pnpm gate EXIT=0, all 645 tests across 43 files, lint, typecheck and the production build passed. Sixteen new focused backend tests cover items 8 through 11. See docs/P14a.md for files per item, test coverage and limits.
+
+## P14b
+
+P14b adds member private agent conversations and approval only action cards, personal and company settings, revocable hashed member MCP tokens with JSON RPC tools and per token limits, and database feedback attachments. Free AI wording has member and sandbox daily caps with deterministic data fallback. Small organisation notes activate immediately; consequential lessons require Agency director review. Forget clears personal memory and conversations while preserving organisation memory and audit. Migration 0013_agent_backend.sql is required before deployment. Backend and tests only, with no new screens or visual changes. The final pnpm gate exits 0 with all 670 tests and the production build passing. See docs/P14b.md for verification and limits.
