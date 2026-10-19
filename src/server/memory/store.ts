@@ -13,32 +13,32 @@ export function memoryStore(owner:TransactionDriver) {
     await db.query("SELECT set_config('app.member_id',$1,true)",[value.id]);return value;
   }
   const admin=(m:Member)=>m.roles.includes('admin')&&!m.roles.includes('client_reviewer');
-  const permitted=(m:Member,e:Entry)=>e.scope==='person'?e.member_id===m.id:admin(m);
+  const permitted=(m:Member,e:Entry)=>e.scope==='person'?e.member_id===m.id:admin(m)||(!m.roles.includes('client_reviewer')&&e.confirmed_by===m.id);
+  const bigLesson=(data:{big:boolean;kind:string;text:string})=>data.big||data.kind!=='preference'||/check|approv|validat|audit|run|verif|review|rule|policy|permission|فحص|موافق|تحقق|تشغيل|راجع|قاعدة|سياسة|صلاحية/i.test(data.text);
   async function saveSnapshot(db:SqlConnection,e:Entry,m:Member) {
     const personal=e.scope==='person'?(await db.query<{preferred_name:string|null;language:string|null;digest_time:string}>('SELECT preferred_name,language,digest_time FROM members WHERE workspace_id=$1 AND id=$2',[m.workspace_id,m.id])).rows[0]:undefined;
     return [...e.history,{text:e.text,status:e.status,deleted_at:e.deleted_at,personal}];
   }
   return {
     async list(member:Member,includeDeleted=false) {
-      return owner.transaction(async db=>{const m=await actor(db,member);return (await db.query<Entry>(`SELECT * FROM memories WHERE workspace_id=$1 AND (($2::boolean AND scope='org') OR (scope='person' AND member_id=$3)) AND ($4::boolean OR deleted_at IS NULL) ORDER BY id`,[m.workspace_id,admin(m),m.id,includeDeleted])).rows;});
+      return owner.transaction(async db=>{const m=await actor(db,member);return (await db.query<Entry>(`SELECT * FROM memories WHERE workspace_id=$1 AND (($2::boolean AND scope='org') OR (scope='person' AND member_id=$3)) AND ($4::boolean OR deleted_at IS NULL) ORDER BY id`,[m.workspace_id,!m.roles.includes('client_reviewer'),m.id,includeDeleted])).rows;});
     },
     async remember(member:Member,value:z.input<typeof input>) {
       const data=input.parse(value);
       if(data.exception) throw new Error('An exception does not become a memory');
       return owner.transaction(async db=>{
         const m=await actor(db,member);
-        if(data.scope==='org'&&(!m.roles.some(r=>['admin','account_manager','delivery_lead'].includes(r))||m.roles.includes('client_reviewer'))) throw new Error('Memory access refused');
         if(data.scope==='org'&&/\b(staff|salary|performance|technician)\b|موظف|راتب|أداء/i.test(data.text)) throw new Error('Personal records need a private manager view');
         if(data.scope==='org'&&data.personal) throw new Error('Personal memory stays personal');
         const sources=[...new Set(data.sourceRunIds)];
         if(data.scope==='org') {
-          if(sources.length<2) throw new Error('A lesson needs repeated records');
-          const count=(await db.query<{n:number}>('SELECT count(*)::int AS n FROM runs WHERE workspace_id=$1 AND id=ANY($2::uuid[])',[m.workspace_id,sources])).rows[0].n;
+          const count=(await db.query<{n:number}>(`SELECT count(*)::int AS n FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 AND r.id=ANY($2::uuid[]) AND app_run(r.workspace_id,r.id) AND ($3::uuid IS NULL OR d.client_company_id=$3)`,[m.workspace_id,sources,m.roles.includes('client_reviewer')?m.client_company_id:null])).rows[0].n;
           if(count!==sources.length) throw new Error('Memory records must belong to this workspace');
         }
         // Every company lesson waits for admin review so impact is never inferred from free text.
-        const status=data.scope==='org'?'waiting_approval':'active';
-        const e=(await db.query<Entry>(`INSERT INTO memories(workspace_id,scope,member_id,kind,text,based_on,based_on_count,status,confirmed_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,[m.workspace_id,data.scope,data.scope==='person'?m.id:null,data.kind,data.text,JSON.stringify(sources),sources.length,status,m.id])).rows[0];
+        const big=data.scope==='org'&&bigLesson(data);
+        const status=big?'waiting_approval':'active';
+        const e=(await db.query<Entry>(`INSERT INTO memories(workspace_id,scope,member_id,kind,text,based_on,based_on_count,status,confirmed_by,big) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,[m.workspace_id,data.scope,data.scope==='person'?m.id:null,data.kind,data.text,JSON.stringify(sources),sources.length,status,m.id,big])).rows[0];
         {
           const previous=data.scope==='person'?(await db.query<{preferred_name:string|null;language:string|null;digest_time:string}>('SELECT preferred_name,language,digest_time FROM members WHERE workspace_id=$1 AND id=$2',[m.workspace_id,m.id])).rows[0]:undefined;
           await db.query('UPDATE memories SET history=$3 WHERE workspace_id=$1 AND id=$2',[m.workspace_id,e.id,JSON.stringify([{text:e.text,status:e.status,deleted_at:new Date().toISOString(),personal:previous}])]);
@@ -58,8 +58,8 @@ export function memoryStore(owner:TransactionDriver) {
         if(operation==='undo') {const previous=e.history.at(-1);if(!previous) {snapshot.deleted_at=new Date().toISOString();history=[];} else {snapshot=previous;history=e.history.slice(0,-1);}}
         else if(operation==='delete') snapshot.deleted_at=new Date().toISOString();
         else if(operation==='approve') snapshot.status='active';
-        else {snapshot.text=input.shape.text.parse(text);if(e.scope==='org'&&/\b(staff|salary|performance|technician)\b|موظف|راتب|أداء/i.test(snapshot.text)) throw new Error('Personal records need a private manager view');if(e.scope==='org') snapshot.status='waiting_approval';}
-        await db.query('UPDATE memories SET text=$3,status=$4,deleted_at=$5,history=$6,revision=revision+1 WHERE workspace_id=$1 AND id=$2',[m.workspace_id,id,snapshot.text,snapshot.status,snapshot.deleted_at,JSON.stringify(history)]);
+        else {snapshot.text=input.shape.text.parse(text);if(e.scope==='org'&&/\b(staff|salary|performance|technician)\b|موظف|راتب|أداء/i.test(snapshot.text)) throw new Error('Personal records need a private manager view');if(e.scope==='org') snapshot.status=e.big||bigLesson({big:false,kind:e.kind,text:snapshot.text})?'waiting_approval':'active';}
+        await db.query("UPDATE memories SET text=$3,status=$4,deleted_at=$5,history=$6,big=big OR (scope='org' AND $4='waiting_approval'),revision=revision+1 WHERE workspace_id=$1 AND id=$2",[m.workspace_id,id,snapshot.text,snapshot.status,snapshot.deleted_at,JSON.stringify(history)]);
         if(operation==='undo'&&e.scope==='person'&&snapshot.personal) await db.query('UPDATE members SET preferred_name=$3,language=$4,digest_time=$5 WHERE workspace_id=$1 AND id=$2',[m.workspace_id,m.id,snapshot.personal.preferred_name,snapshot.personal.language,snapshot.personal.digest_time]);
         await append(db,m.workspace_id,{action:'memory_'+operation,outcome:'succeeded',target_id:id,after:{revision:e.revision+1}});
         return {message:operation==='delete'?'Memory removed':operation==='undo'?'Memory restored':'Memory saved'};
@@ -78,8 +78,14 @@ export function memoryStore(owner:TransactionDriver) {
       if(yes!==true) throw new Error('Confirm before clearing personal memory');
       return owner.transaction(async db=>{
         const m=await actor(db,member);
-        const entries=(await db.query<Entry>("SELECT * FROM memories WHERE workspace_id=$1 AND member_id=$2 AND scope='person' AND deleted_at IS NULL FOR UPDATE",[m.workspace_id,m.id])).rows;
-        for(const e of entries) {await db.query('UPDATE memories SET deleted_at=now(),history=$3,revision=revision+1 WHERE workspace_id=$1 AND id=$2',[m.workspace_id,e.id,JSON.stringify(await saveSnapshot(db,e,m))]);await append(db,m.workspace_id,{action:'memory_delete',outcome:'succeeded',target_id:e.id});}
+        const entries=(await db.query<Entry>("SELECT id FROM memories WHERE workspace_id=$1 AND member_id=$2 AND scope='person' FOR UPDATE",[m.workspace_id,m.id])).rows;
+        for(const e of entries)await append(db,m.workspace_id,{action:'memory_delete',outcome:'succeeded',target_id:e.id});
+        await db.query("DELETE FROM memories WHERE workspace_id=$1 AND member_id=$2 AND scope='person'",[m.workspace_id,m.id]);
+        await db.query('DELETE FROM agent_cards WHERE workspace_id=$1 AND member_id=$2',[m.workspace_id,m.id]);
+        await db.query('UPDATE onboarding_inputs SET source_message_id=NULL WHERE workspace_id=$1 AND source_message_id IN (SELECT id FROM agent_messages WHERE workspace_id=$1 AND member_id=$2)',[m.workspace_id,m.id]);
+        await db.query('DELETE FROM agent_messages WHERE workspace_id=$1 AND member_id=$2',[m.workspace_id,m.id]);
+        await db.query('DELETE FROM agent_threads WHERE workspace_id=$1 AND member_id=$2',[m.workspace_id,m.id]);
+        await append(db,m.workspace_id,{action:'personal_data_forgotten',outcome:'succeeded'});
         await db.query("UPDATE members SET digest_time='09:00',preferred_name=CASE WHEN $3 THEN NULL ELSE preferred_name END,language=CASE WHEN $3 THEN NULL ELSE language END WHERE workspace_id=$1 AND id=$2",[m.workspace_id,m.id,includeIdentity]);
         return {message:'Personal memory cleared'};
       });

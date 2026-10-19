@@ -54,7 +54,7 @@ export function monitorStore(owner:TransactionDriver) {
     },
     async scan(ws:string,now=Date.now()) {
       // AI is outside the database transaction. Only P5 mail receipts already linked to a run are considered.
-      const companyMemory=await owner.transaction(async db=>(await db.query<{id:string;text:string}>("SELECT id,text FROM memories WHERE workspace_id=$1 AND scope='org' AND status='active' AND confirmed_by IS NOT NULL AND deleted_at IS NULL ORDER BY id",[ws])).rows);
+      const companyMemory=await owner.transaction(async db=>(await db.query<{id:string;text:string}>("SELECT id,text FROM memories WHERE workspace_id=$1 AND scope='org' AND big=true AND status='active' AND confirmed_by IS NOT NULL AND deleted_at IS NULL ORDER BY id",[ws])).rows);
       const mail=await owner.transaction(async db=>(await db.query<{id:string;run_id:string;received_at:string;raw:{text?:string}}>(`SELECT e.id,e.run_id,e.received_at,e.raw FROM inbound_events e WHERE e.workspace_id=$1 AND e.source='mail' AND e.run_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM findings f WHERE f.workspace_id=e.workspace_id AND f.run_id=e.run_id AND f.monitor_key='mail:'||e.id)`,[ws])).rows);
       const classified:Array<(typeof mail)[number]&{quote:string;method:'rules'|'ai';memoryIds?:string[]}>=[];
       for(const message of mail) {const request=await classifyScopeEmail(message.raw.text??'',undefined,companyMemory);if(request) classified.push({...message,...request});}
