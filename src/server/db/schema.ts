@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, uuid, text, boolean, timestamp, integer, numeric, date, time, jsonb, bigserial, primaryKey, unique, uniqueIndex, index, check, foreignKey } from 'drizzle-orm/pg-core';
+import { customType, pgTable, uuid, text, boolean, timestamp, integer, numeric, date, time, jsonb, bigserial, primaryKey, unique, uniqueIndex, index, check, foreignKey } from 'drizzle-orm/pg-core';
 
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -10,9 +10,12 @@ export const workspaces = pgTable('workspaces', {
   demo_expires_at: timestamp('demo_expires_at', { withTimezone: true, mode: 'string' }),
   timezone: text('timezone').default('Asia/Dubai'),
   working_days: integer('working_days').array().notNull().default(sql`ARRAY[0,1,2,3,4]`),
+  default_delivery_lead_id: uuid('default_delivery_lead_id'),
+  won_stage_id: text('won_stage_id'),
   currency: text('currency').default('AED')
 }, (t): import('drizzle-orm/pg-core').PgTableExtraConfigValue[] => [
   unique('workspaces_workspace_id_id').on(t.workspace_id, t.id),
+  foreignKey({columns:[t.workspace_id,t.default_delivery_lead_id],foreignColumns:[members.workspace_id,members.id]}),
   check('workspaces_identity_check', sql`${t.workspace_id} = ${t.id}`)
 ]);
 
@@ -80,6 +83,8 @@ export const members = pgTable('members', {
   user_id: uuid('user_id'),
   display_name: text('display_name').notNull(),
   preferred_name: text('preferred_name'),
+  agent_name: text('agent_name').notNull().default('Agent'),
+  voice: boolean('voice').notNull().default(false),
   digest_time: time('digest_time').notNull().default('09:00'),
   language: text('language', { enum: ['en', 'ar'] }),
   roles: text('roles').array().notNull(),
@@ -261,6 +266,7 @@ export const deliverable_mappings = pgTable('deliverable_mappings', {
 ]);
 
 export const memories = pgTable('memories', {
+  big: boolean('big').notNull().default(true),
   deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
   confirmed_by: uuid('confirmed_by'),
   revision: integer('revision').notNull().default(1),
@@ -648,3 +654,33 @@ export const demo_resources = pgTable('demo_resources', {
   foreignKey({columns:[t.workspace_id,t.origin_effect_id],foreignColumns:[external_effects.workspace_id,external_effects.id]}),
   check('demo_resources_provider_check',sql`${t.provider} in ('clickup','hubspot')`),
 ]);
+
+export const agent_cards = pgTable('agent_cards', {
+ id: uuid('id').defaultRandom().primaryKey(),
+ workspace_id: uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ member_id: uuid('member_id').notNull(), thread_id: uuid('thread_id').notNull(),
+ draft: jsonb('draft').notNull(), approval_id: uuid('approval_id'),
+ revision: integer('revision').notNull().default(1), note: text('note'),
+},t=>[
+ foreignKey({columns:[t.workspace_id,t.member_id],foreignColumns:[members.workspace_id,members.id]}),
+ foreignKey({columns:[t.workspace_id,t.thread_id],foreignColumns:[agent_threads.workspace_id,agent_threads.id]}),
+ foreignKey({columns:[t.workspace_id,t.approval_id],foreignColumns:[approvals.workspace_id,approvals.id]}),
+]);
+export const mcp_tokens = pgTable('mcp_tokens', {
+ id: uuid('id').defaultRandom().primaryKey(), workspace_id: uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+ member_id: uuid('member_id').notNull(),name:text('name').notNull(),token_hash:text('token_hash').notNull().unique(),
+ created_at:timestamp('created_at',{withTimezone:true,mode:'string'}).notNull().defaultNow(),
+ revoked_at:timestamp('revoked_at',{withTimezone:true,mode:'string'}),
+ window_start:timestamp('window_start',{withTimezone:true,mode:'string'}).notNull().defaultNow(),requests:integer('requests').notNull().default(0),
+},t=>[foreignKey({columns:[t.workspace_id,t.member_id],foreignColumns:[members.workspace_id,members.id]})]);
+export const agent_ai_usage = pgTable('agent_ai_usage', {
+ workspace_id:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),member_id:uuid('member_id').notNull(),
+ day:date('day').notNull().defaultNow(),calls:integer('calls').notNull().default(0),
+},t=>[primaryKey({columns:[t.workspace_id,t.member_id,t.day]}),foreignKey({columns:[t.workspace_id,t.member_id],foreignColumns:[members.workspace_id,members.id]})]);
+const bytes=customType<{data:Buffer}>({dataType:()=> 'bytea'});
+export const feedback = pgTable('feedback', {
+ id:uuid('id').defaultRandom().primaryKey(),workspace_id:uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),member_id:uuid('member_id').notNull(),
+ message:text('message').notNull(),page_path:text('page_path').notNull(),app_version:text('app_version').notNull(),
+ picture:bytes('picture'),picture_type:text('picture_type'),created_at:timestamp('created_at',{withTimezone:true,mode:'string'}).notNull().defaultNow(),
+},t=>[foreignKey({columns:[t.workspace_id,t.member_id],foreignColumns:[members.workspace_id,members.id]}),
+ check('feedback_message_length',sql`length(${t.message}) BETWEEN 1 AND 2000`),check('feedback_picture_size',sql`${t.picture} IS NULL OR octet_length(${t.picture})<=2097152`)]);

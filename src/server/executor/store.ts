@@ -1,4 +1,7 @@
 import 'server-only';
+import { loadMessages } from '../../lib/i18n';
+import { recoveryStore } from '../recovery/store';
+import type { Member } from '../permissions';
 import type { TransactionDriver } from '../db/withMember';
 import type { Job } from '../jobs/store';
 import { systemAudit } from '../jobs/store';
@@ -37,7 +40,7 @@ export function executorStore(owner:TransactionDriver) {
     },
     async child(root:Effect,request:ExactEffect,itemKey:string,target:string) {
       return owner.transaction(async db=>{
-        const key=effectKey(root.run_id,request.action,target,itemKey);
+        const key=effectKey(root.run_id,request.action,target,request.action==='retry_recovery'?root.approval_id+':'+itemKey:itemKey);
         const rows=await db.query<Effect>(`INSERT INTO external_effects(workspace_id,run_id,approval_id,parent_effect_id,effect_key,system,action,target_ref,request,request_hash,state,attempts,reversibility) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'planned',0,$11) ON CONFLICT(workspace_id,effect_key) DO NOTHING RETURNING *`,[root.workspace_id,root.run_id,root.approval_id,root.id,key,request.system,request.action,target,JSON.stringify(request),hash(request),root.reversibility]);
         const row=rows.rows[0]??(await db.query<Effect>('SELECT * FROM external_effects WHERE workspace_id=$1 AND effect_key=$2',[root.workspace_id,key])).rows[0];
         if(row.request_hash!==hash(request)) throw new Error('Effect request changed');
@@ -130,11 +133,35 @@ export function executorStore(owner:TransactionDriver) {
         return version;
       });
     },
+    async retryRecovery(effect:Effect) {
+      return owner.transaction(async db=>{
+        const current=(await db.query<{state:string}>('SELECT state FROM external_effects WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[effect.workspace_id,effect.id])).rows[0];
+        if(current?.state==='succeeded')return {status:200};
+        const approval=(await db.query<Approval>("SELECT * FROM approvals WHERE workspace_id=$1 AND id=$2 AND kind='plan_correction' AND status IN ('executing','executed')",[effect.workspace_id,effect.approval_id])).rows[0];
+        if(!approval?.requested_by_member_id)return {status:403};
+        const actor=(await db.query<Member & Record<string,unknown>>('SELECT m.*,false AS is_demo FROM members m WHERE workspace_id=$1 AND id=$2',[effect.workspace_id,approval.requested_by_member_id])).rows[0];
+        const id=z.uuid().parse(effect.request.records[0]?.id);
+        const item=(await db.query('SELECT id FROM recovery_items WHERE workspace_id=$1 AND id=$2 AND run_id=$3',[effect.workspace_id,id,effect.run_id])).rows[0];
+        if(!actor||!item)return {status:404};
+        // The existing recovery store rechecks current identity, roles, ownership, options and job state.
+        // Requeue and effect success are one transaction, so a retry cannot queue the job twice.
+        const result=await recoveryStore({transaction:work=>work(db)}).act(actor,id,'retry_now',approval.payload.reviewNote??'');
+        if(result.status>=400)return result;
+        await db.query("UPDATE external_effects SET state='succeeded',result=$3 WHERE workspace_id=$1 AND id=$2",[effect.workspace_id,effect.id,JSON.stringify({recoveryId:id})]);
+        await audit(db,effect.workspace_id,'effect_succeeded',effect.id);
+        return result;
+      });
+    },
     async complete(job:Job) {
       return owner.transaction(async db=>{
         const pending=(await db.query("SELECT id FROM external_effects WHERE workspace_id=$1 AND approval_id=$2 AND state NOT IN ('succeeded','compensated')",[job.workspace_id,job.payload.approvalId])).rows.length;
         if(!pending) {
           const approval=(await db.query<Approval>('SELECT * FROM approvals WHERE workspace_id=$1 AND id=$2 FOR UPDATE',[job.workspace_id,job.payload.approvalId])).rows[0];
+          if(approval?.payload.effects.some(e=>e.action==='retry_recovery')) {
+            await db.query("UPDATE approvals SET status='executed',executed_at=now(),execution_summary=execution_summary || jsonb_build_object('message',$3::text,'completed',true) WHERE workspace_id=$1 AND id=$2",[job.workspace_id,approval.id,loadMessages('en').backendA5.retryQueued]);
+            await audit(db,job.workspace_id,'execution_checked',approval.id);
+            return;
+          }
           if(approval && ['provision','plan_correction'].includes(approval.kind)) {
             const accepted=await db.query<{id:string}>(`UPDATE scope_versions v SET status='accepted',accepted_by=$3,accepted_at=now() FROM runs r WHERE r.workspace_id=$1 AND r.id=$2 AND v.workspace_id=r.workspace_id AND v.id=r.scope_version_id AND v.version=1 AND v.status='draft' RETURNING v.id`,[job.workspace_id,job.run_id,approval.decided_by]);
             for(const v of accepted.rows) await audit(db,job.workspace_id,'scope_version_accepted',v.id,{approval_id:approval.id});
