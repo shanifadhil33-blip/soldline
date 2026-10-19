@@ -22,7 +22,7 @@ export function demoStore(owner: TransactionDriver) {
           // Guard both operations even though ids came from a demo only query.
           await db.query('UPDATE workspaces SET demo_expires_at=now() WHERE id=$1 AND is_demo=true', [row.id]);
           await db.query(`INSERT INTO jobs (workspace_id,kind,payload,dedupe_key,status)
-            SELECT w.id,'demo_cleanup',jsonb_build_object('clickup_folder_id','sample_' || w.id::text,'hubspot_deal_id',d.hubspot_deal_id),'demo_cleanup','queued'
+            SELECT w.id,'demo_cleanup','{}'::jsonb,'demo_cleanup','queued'
             FROM workspaces w JOIN deals d ON d.workspace_id=w.id
             WHERE w.id=$1 AND w.is_demo=true ORDER BY (d.name LIKE 'Harbor Coffee Roasters%') DESC, d.name LIMIT 1
             ON CONFLICT (workspace_id,dedupe_key) DO NOTHING`, [row.id]);

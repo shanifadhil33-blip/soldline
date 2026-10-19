@@ -578,6 +578,7 @@ export const demo_faults = pgTable('demo_faults', {
   provider: text('provider', { enum: ['hubspot', 'clickup', 'mail'] }).notNull(),
   fail_next: integer('fail_next').notNull().default(0),
   mode: text('mode', { enum: ['outage', 'revoked'] }).notNull(),
+  operation: text('operation'),
 }, t => [
   primaryKey({ columns: [t.workspace_id, t.provider] }),
   check('demo_faults_provider_check', sql`${t.provider} in ('hubspot','clickup','mail')`),
@@ -613,6 +614,37 @@ export const monitor_tasks = pgTable('monitor_tasks', {
   primaryKey({columns:[t.workspace_id,t.run_id,t.task_id]}),
   foreignKey({columns:[t.workspace_id,t.client_approved_by],foreignColumns:[members.workspace_id,members.id]}),
   check('client_review_pair',sql`(${t.client_approved_at} IS NULL) = (${t.client_approved_by} IS NULL)`),
+  foreignKey({columns:[t.workspace_id],foreignColumns:[workspaces.id]}).onDelete('cascade'),
   foreignKey({columns:[t.workspace_id,t.run_id],foreignColumns:[runs.workspace_id,runs.id]}),
   foreignKey({columns:[t.workspace_id,t.scope_item_id],foreignColumns:[scope_items.workspace_id,scope_items.id]}),
+]);
+
+
+export const sample_mail = pgTable('sample_mail', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workspace_id: uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+  run_id: uuid('run_id').notNull(),
+  direction: text('direction',{enum:['inbound','outbound']}).notNull(),
+  message_id: text('message_id').notNull(),
+  thread_id: text('thread_id').notNull(),
+  raw: jsonb('raw').notNull(),
+  status: text('status').notNull().default('Sample, not sent'),
+  created_at: timestamp('created_at',{withTimezone:true,mode:'string'}).notNull().defaultNow(),
+},t=>[
+  unique().on(t.workspace_id,t.message_id),
+  foreignKey({columns:[t.workspace_id,t.run_id],foreignColumns:[runs.workspace_id,runs.id]}).onDelete('cascade'),
+  check('sample_mail_direction_check',sql`${t.direction} in ('inbound','outbound')`),
+]);
+export const demo_resources = pgTable('demo_resources', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workspace_id: uuid('workspace_id').notNull().references(()=>workspaces.id,{onDelete:'cascade'}),
+  provider: text('provider',{enum:['clickup','hubspot']}).notNull(),
+  external_id: text('external_id').notNull(),
+  seed_state: jsonb('seed_state').notNull().default({}),
+  cleaned_at: timestamp('cleaned_at',{withTimezone:true,mode:'string'}),
+  origin_effect_id: uuid('origin_effect_id'),
+},t=>[
+  unique().on(t.workspace_id,t.provider,t.external_id),
+  foreignKey({columns:[t.workspace_id,t.origin_effect_id],foreignColumns:[external_effects.workspace_id,external_effects.id]}),
+  check('demo_resources_provider_check',sql`${t.provider} in ('clickup','hubspot')`),
 ]);

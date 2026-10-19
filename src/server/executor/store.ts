@@ -59,6 +59,9 @@ export function executorStore(owner:TransactionDriver) {
     async set(effect:Effect,state:string,result?:Record<string,unknown>,externalId?:string) {
       return owner.transaction(async db=>{
         await db.query('UPDATE external_effects SET state=$3,result=coalesce($4::jsonb,result),external_id=coalesce($5,external_id),attempts=coalesce(attempts,0)+CASE WHEN $3=\'in_flight\' THEN 1 ELSE 0 END,last_error_code=CASE WHEN $3 IN (\'failed\',\'unknown\') THEN $3 ELSE NULL END WHERE workspace_id=$1 AND id=$2',[effect.workspace_id,effect.id,state,result?JSON.stringify(result):null,externalId??null]);
+        if(state==='succeeded'&&effect.action==='create_folder'&&effect.parent_effect_id&&externalId&&Array.isArray(result?.before_ids)&&!result.before_ids.includes(externalId)) {
+          await db.query(`INSERT INTO demo_resources(workspace_id,provider,external_id,origin_effect_id) SELECT id,'clickup',$2,$3 FROM workspaces WHERE id=$1 AND is_demo ON CONFLICT DO NOTHING`,[effect.workspace_id,externalId,effect.id]);
+        }
         await audit(db,effect.workspace_id,'effect_'+state,effect.id);
       });
     },
