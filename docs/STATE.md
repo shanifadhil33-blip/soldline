@@ -1,5 +1,26 @@
 # Soldline
 
+## PAUSED Oct 19 2026, not dropped
+
+Paused by Bilal on Adhil's decision (Oct 19 2026, via Jarvis) for the second championship entry, Proofline. Soldline resumes after Proofline with nothing lost.
+
+Where it stopped:
+- Live at commit b260c83 on https://soldline-teal.vercel.app (repo shanifadhil33-blip/soldline, main, clean and pushed; Vercel success).
+- pnpm gate PASS with 670 tests. e2e 83 of 83 pass against the new seed (e99fca7). Migrations up to 0013 applied on Neon.
+- Google sign in published (any Google account can sign in; /privacy and /terms are live).
+- Codex is not held by Bilal (Abu is current holder in team-memory/codex-lock.md). No Codex process running.
+
+What is left, in this order:
+1. p15a: make the seeded Harbor approval run for real (it is display only today, so Approve in the live demo cannot execute; rebuild it with provisionPayload like e2e/fixtures/core.ts). Codex prompt ready: /workspace/soldline-prompts/p15a.md (copies in this folder under prompts/ and in the repo under docs/prompts/).
+2. HubSpot app webhook (/api/webhooks/hubspot) and ClickUp OAuth app (/api/webhooks/clickup), with their env vars in Vercel.
+3. Live sandbox run (LIVE_SANDBOX=1 pnpm test:live) with real calls and failure paths. Closes Gate step 5.
+4. A real end to end Google sign in check with a real account.
+5. Stitch design for web and phone from Adhil's pick (Gate step 4, design/references/), with Adhil's approval.
+6. Then the Codex rebuild from Stitch and QA (Gate steps 6 to 10: known issues recheck, live e2e and role walk, phone sweep at 360 and 390 in English and Arabic, lessons merged into build-knowledge), then P15 docs and the portfolio entry.
+
+Prompts and logs: /workspace/soldline-prompts (originals, left in place), /home/box/shared/adhil/portfolio/agency-delivery-agent/prompts/ (full copy incl. Codex logs), repo docs/prompts/ (prompt and report files only; the repo is public, so logs stay out of it).
+
+
 ## Done
 
 P1 app scaffold with one landing placeholder, English and Arabic message skeletons, design tokens, strict TypeScript, HTTP fixtures and a gate for lint, types, tests and production build. Playwright lives in a separate package under e2e. The final gate passed all 39 tests and the production build. The deliberate test failure returned 1 and the restored gate returned 0. See verification.md for evidence.
