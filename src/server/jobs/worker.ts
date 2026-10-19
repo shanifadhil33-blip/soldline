@@ -4,6 +4,8 @@ import type { systemProviders } from './providers';
 import type { HubspotEvent } from '../events/model';
 export type Providers = ReturnType<typeof systemProviders>;
 export async function perform(store: JobStore, providers: Providers, job: Job, now = Date.now, deadline=Date.now()+25000) {
+  if(job.kind==='demo_cleanup') { await store.cleanup(job,deadline); return; }
+  if(job.kind==='task_status') { await store.taskStatus(job,deadline); return; }
   if(job.kind==='monitor_workspace') { await store.monitor(job,deadline); return; }
   if(job.kind==='execute_approval_effect') { await store.executeEffect(job,deadline); return; }
   if(job.kind==='process_event') { await store.handleEvent(job.workspace_id,job.payload.eventId); return; }
@@ -44,10 +46,11 @@ export async function perform(store: JobStore, providers: Providers, job: Job, n
   await store.saveReconcile(connection,events,started);
 }
 export async function work(store: JobStore, providers: Providers, now = Date.now) {
-  const start=now(); let processed=0;
+  const start=now(); let processed=0,cleanups=0;
   while(processed<20 && now()-start<25000) {
-    const job=await store.claim(now());
+    const job=await store.claim(now(),cleanups<5);
     if(!job) break;
+    if(job.kind==='demo_cleanup')cleanups++;
     try { if(job.exhausted) await store.finish(job,false,now()); else { await perform(store,providers,job,now,start+25000); await store.finish(job,true,now()); } }
     catch { await store.finish(job,false,now()); }
     processed++;

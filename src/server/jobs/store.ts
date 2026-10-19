@@ -1,4 +1,7 @@
 import 'server-only';
+import { cleanupSandbox } from '../demo/cleanup';
+import { ClickUpClient } from '../integrations/clickup';
+import { WorkerConnections } from './providers';
 import { monitorStore } from '../monitors/store';
 import { executorStore } from '../executor/store';
 import { executorProviders } from '../executor/providers';
@@ -50,10 +53,19 @@ async function handle(db: SqlConnection, ws: string, eventId: string, via?: 'rep
 /** The owner driver stays in this closure. All methods implement fixed, workspace scoped operations. */
 export function jobStore(owner: TransactionDriver) {
   return {
+    cleanup(job:Job,deadline:number) { return cleanupSandbox(owner,job,deadline); },
+    async taskStatus(job:Job,deadline:number) {
+      if(!['in progress','client review','complete'].includes(job.payload.status))throw new Error('Task status refused');
+      if(!job.payload.taskId.startsWith('sample_'))await new ClickUpClient({connections:new WorkerConnections(owner,job.workspace_id),deadline}).updateTask(job.payload.taskId,{status:job.payload.status});
+      await owner.transaction(async db=>{
+        await db.query(`UPDATE monitor_tasks SET status=$4,closed=($4='complete'),review_since=CASE WHEN $4='client review' THEN now() ELSE review_since END,observed_at=now() WHERE workspace_id=$1 AND run_id=$2 AND task_id=$3`,[job.workspace_id,job.run_id,job.payload.taskId,job.payload.status]);
+        await systemAudit(db,job.workspace_id,'system','task_status_updated',job.payload.taskId,{status:job.payload.status,sample:job.payload.taskId.startsWith('sample_')});
+      });
+    },
     async executeEffect(job:Job,deadline=Date.now()+25000) {
       const store=executorStore(owner);
       const data=await store.load(job);
-      if(data) await executeEffects(store,job,executorProviders(owner,job.workspace_id,data.inbox,deadline),job.payload.reconcileOnly==='true',(ws,id)=>monitorStore(owner).memberName(ws,id));
+      if(data) await executeEffects(store,job,executorProviders(owner,job.workspace_id,data.inbox,deadline,job.run_id??undefined),job.payload.reconcileOnly==='true',(ws,id)=>monitorStore(owner).memberName(ws,id));
     },
     async monitor(job:Job,deadline:number) {
       const monitors=monitorStore(owner);
@@ -83,6 +95,8 @@ export function jobStore(owner: TransactionDriver) {
     },
     schedule(now: number, daily=false) {
       return owner.transaction(async db => {
+        const expired=await db.query<{id:string}>("SELECT id FROM workspaces WHERE is_demo AND (demo_expires_at<=now() OR created_at<=now()-interval '6 hours') ORDER BY created_at,id LIMIT 5");
+        for(const ws of expired.rows){await enqueue(db,ws.id,'demo_cleanup','demo_cleanup',{},'schedule');await db.query("UPDATE jobs SET next_attempt_at=now() WHERE workspace_id=$1 AND kind='demo_cleanup' AND status='failed'",[ws.id]);}
         const rows=await db.query<Connection>("SELECT c.* FROM connections c JOIN workspaces w ON w.id=c.workspace_id WHERE c.status='connected' AND c.provider IN ('mail','hubspot') AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())");
         if(!daily) {
           const workspaces=await db.query<{id:string}>("SELECT id FROM workspaces WHERE NOT coalesce(is_demo,false) OR demo_expires_at>now()");
@@ -96,9 +110,9 @@ export function jobStore(owner: TransactionDriver) {
         }
       });
     },
-    claim(now: number) {
+    claim(now: number,allowCleanup=true) {
       return owner.transaction(async db => {
-        const r=await db.query<Job>(`WITH candidate AS (SELECT id,coalesce(attempts,0) AS previous_attempts FROM jobs WHERE NOT EXISTS(SELECT 1 FROM connections paused WHERE paused.workspace_id=jobs.workspace_id AND paused.status IN ('needs_reconnect','paused','revoked') AND ((jobs.kind='mail_poll' AND paused.id::text=jobs.payload->>'connectionId') OR (jobs.kind='execute_approval_effect' AND EXISTS(SELECT 1 FROM approvals a CROSS JOIN LATERAL jsonb_array_elements(a.payload->'effects') e WHERE a.workspace_id=jobs.workspace_id AND a.id::text=jobs.payload->>'approvalId' AND e->>'system'=paused.provider)))) AND NOT EXISTS(SELECT 1 FROM jobs busy WHERE busy.workspace_id=jobs.workspace_id AND busy.run_id=jobs.run_id AND busy.id<>jobs.id AND busy.kind='execute_approval_effect' AND jobs.kind='execute_approval_effect' AND busy.status='running' AND busy.locked_until>$1) AND kind IN ('process_event','analyse_deal','mail_poll','reconcile_hubspot','hubspot_keep_alive','execute_approval_effect','monitor_workspace') AND ((status IN ('queued','failed') AND coalesce(next_attempt_at,'epoch') <= $1) OR (status='running' AND locked_until <= $1)) ORDER BY next_attempt_at NULLS FIRST,id FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE jobs j SET status='running',attempts=least(coalesce(attempts,0)+1,5),locked_until=$2,lock_token=$3 FROM candidate c WHERE j.id=c.id RETURNING j.*,c.previous_attempts>=5 AS exhausted`,[new Date(now).toISOString(),new Date(now+120000).toISOString(),randomUUID()]);
+        const r=await db.query<Job>(`WITH candidate AS (SELECT id,coalesce(attempts,0) AS previous_attempts FROM jobs WHERE (kind<>'demo_cleanup' OR $4::boolean) AND (kind='demo_cleanup' OR NOT EXISTS(SELECT 1 FROM workspaces expired WHERE expired.id=jobs.workspace_id AND expired.is_demo AND (expired.demo_expires_at<=now() OR expired.created_at<=now()-interval '6 hours'))) AND NOT EXISTS(SELECT 1 FROM connections paused WHERE paused.workspace_id=jobs.workspace_id AND paused.status IN ('needs_reconnect','paused','revoked') AND ((jobs.kind='mail_poll' AND paused.id::text=jobs.payload->>'connectionId') OR (jobs.kind='execute_approval_effect' AND EXISTS(SELECT 1 FROM approvals a CROSS JOIN LATERAL jsonb_array_elements(a.payload->'effects') e WHERE a.workspace_id=jobs.workspace_id AND a.id::text=jobs.payload->>'approvalId' AND e->>'system'=paused.provider)))) AND NOT EXISTS(SELECT 1 FROM jobs busy WHERE busy.workspace_id=jobs.workspace_id AND busy.run_id=jobs.run_id AND busy.id<>jobs.id AND busy.kind='execute_approval_effect' AND jobs.kind='execute_approval_effect' AND busy.status='running' AND busy.locked_until>$1) AND kind IN ('process_event','analyse_deal','mail_poll','reconcile_hubspot','hubspot_keep_alive','execute_approval_effect','monitor_workspace','task_status','demo_cleanup') AND ((status IN ('queued','failed') AND coalesce(next_attempt_at,'epoch') <= $1) OR (status='running' AND locked_until <= $1)) ORDER BY next_attempt_at NULLS FIRST,id FOR UPDATE SKIP LOCKED LIMIT 1) UPDATE jobs j SET status='running',attempts=least(coalesce(attempts,0)+1,5),locked_until=$2,lock_token=$3 FROM candidate c WHERE j.id=c.id RETURNING j.*,(c.previous_attempts>=5 AND j.kind<>'demo_cleanup') AS exhausted`,[new Date(now).toISOString(),new Date(now+120000).toISOString(),randomUUID(),allowCleanup]);
         const job=r.rows[0];
         if(job) await systemAudit(db,job.workspace_id,'system','job_claimed',job.id);
         return job;
@@ -106,9 +120,9 @@ export function jobStore(owner: TransactionDriver) {
     },
     finish(job: Job, ok: boolean, now: number) {
       return owner.transaction(async db => {
-        const rows=await db.query<{id:string}>(`UPDATE jobs SET status=$4,locked_until=NULL,lock_token=NULL,next_attempt_at=$5,last_error_code=$6 WHERE workspace_id=$1 AND id=$2 AND lock_token=$3 AND status='running' RETURNING id`,[job.workspace_id,job.id,job.lock_token,ok?'done':job.attempts>=5?'dead':'failed',new Date(now+delays[Math.min(job.attempts-1,4)]).toISOString(),ok?null:'job_failed']);
+        const rows=await db.query<{id:string}>(`UPDATE jobs SET status=$4,locked_until=NULL,lock_token=NULL,next_attempt_at=$5,last_error_code=$6 WHERE workspace_id=$1 AND id=$2 AND lock_token=$3 AND status='running' RETURNING id`,[job.workspace_id,job.id,job.lock_token,ok?'done':job.attempts>=5&&job.kind!=='demo_cleanup'?'dead':'failed',new Date(now+(job.kind==='demo_cleanup'?300000:delays[Math.min(job.attempts-1,4)])).toISOString(),ok?null:'job_failed']);
         if(!rows.rows.length) return;
-        if(!ok && job.attempts>=5) {
+        if(!ok && job.attempts>=5 && job.kind!=='demo_cleanup') {
           await db.query(`INSERT INTO recovery_items(workspace_id,run_id,job_id,kind,title,plain_reason,owner_member_id,status,allowed_options) SELECT $1,coalesce($2::uuid,(SELECT run_id FROM jobs WHERE workspace_id=$1 AND id=$3)),$3,'job_failed','A job needs attention','This job could not finish after five attempts',coalesce((SELECT delivery_lead_id FROM runs WHERE workspace_id=$1 AND id=coalesce($2::uuid,(SELECT run_id FROM jobs WHERE workspace_id=$1 AND id=$3))),(SELECT delivery_lead_id FROM connections WHERE workspace_id=$1 AND id=$4)),'open',CASE WHEN $5='execute_approval_effect' THEN ARRAY['retry_now','resolve_with_note','cancel_remaining','reconcile'] ELSE ARRAY['retry'] END ON CONFLICT DO NOTHING`,[job.workspace_id,job.run_id,job.id,job.payload.connectionId ?? null,job.kind]);
           await systemAudit(db,job.workspace_id,'system','recovery_created',job.id);
         }

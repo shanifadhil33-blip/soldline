@@ -34,6 +34,7 @@ const context=(id:string)=>({params:Promise.resolve({id})});
 const req=(cookie='',body:unknown={})=>new Request('https://fixtures.soldline.test/action',{method:'POST',headers:{cookie,'Content-Type':'application/json'},body:JSON.stringify(body)});
 // Only runtime wiring and Next after are replaced. Sessions, guards, stores and the queue are real.
 beforeAll(async()=>{
+  vi.stubEnv('MAIL_PROVIDER','agentmail');
   if(live) remote=liveProviders(liveConfig(process.env));
   vi.stubEnv('DEMO_SIGNING_KEY','backend fixture signing key');
   vi.stubEnv('TOKEN_ENC_KEY',Buffer.alloc(32,7).toString('base64'));
@@ -88,7 +89,7 @@ async function scenario() {
   for(const line of lines) await db.query('INSERT INTO line_items(workspace_id,deal_id,hubspot_line_item_id,name) VALUES($1,$2,$3,$4)',[ws,deal,line.id,line.properties.name]);
   for(const [i,m] of input.mappings.entries()) await db.query("INSERT INTO deliverable_mappings(workspace_id,match_title_normalised,synonyms,template_list,task_title,default_role,estimate_minutes,due_offset_days,clickup_list_id,status) VALUES($1,$2,'[]',$3,$4,$5,$6,$7,$8,'active')",[ws,m.title,['Setup','Content','Ads','Reporting'][Math.floor(i/2)],m.taskTitle,m.role,m.estimate,m.offset,remote?.config.workloadList??'workload']);
   await db.query('UPDATE members SET clickup_user_id=$2 WHERE id=$1',[member.ravi,String(assignee)]);
-  for(const provider of ['hubspot','clickup','mail']) await db.query("INSERT INTO connections(workspace_id,provider,status,external_account_id,token_ciphertext,won_stage_id,delivery_lead_id) VALUES($1,$2,'connected',$3,$4,$6,$5)",[ws,provider,provider==='hubspot'?portal:provider==='mail'?'omar@example.test':'team',encryptToken(remote?.token(provider)??'fixture'),member.imran,wonStage]);
+  for(const provider of ['hubspot','clickup','mail']) await db.query("INSERT INTO connections(workspace_id,provider,status,external_account_id,token_ciphertext,won_stage_id,delivery_lead_id) VALUES($1,$2,'connected',$3,$4,$6,$5) ON CONFLICT(workspace_id,provider) DO UPDATE SET status='connected',external_account_id=$3,token_ciphertext=$4,won_stage_id=$6,delivery_lead_id=$5",[ws,provider,provider==='hubspot'?portal:provider==='mail'?'omar@example.test':'team',encryptToken(remote?.token(provider)??'fixture'),member.imran,wonStage]);
   const fixtureHandler=async(request:Request):Promise<Response>=>{
     const url=new URL(request.url),path=url.pathname;
     const provider=url.hostname==='api.clickup.com'?'clickup':url.hostname==='api.hubapi.com'?'hubspot':'mail';calls[provider]++;
@@ -100,6 +101,7 @@ async function scenario() {
       return HttpResponse.json({id:external,properties});
     }
     const parts=path.split('/'),target=parts.at(-2)!;
+    if(request.method==='DELETE'&&parts.at(-2)==='folder')return new HttpResponse(null,{status:204});
     if(path.endsWith('/task') && request.method==='GET') return HttpResponse.json({tasks:objects.tasks.filter(t=>t.parent===target),last_page:true});
     if(path.endsWith('/folder') && request.method==='GET') return HttpResponse.json({folders:objects.folders});
     if(path.endsWith('/list') && request.method==='GET') return HttpResponse.json({lists:objects.lists.filter(t=>t.parent===target)});
@@ -269,5 +271,5 @@ it('Backend report covers every exported route and server action',()=>{
     for(const method of methods) expect(report,file+' '+method).toContain('`'+method+' '+path+'`');
   }
   const actions=filesUnder('src').filter(f=>/\.tsx?$/.test(f)&&/['"]use server['"]/.test(readFileSync(f,'utf8')));
-  expect(actions).toEqual([]);expect(report).toContain('Server actions: none');
+  expect(actions).toEqual(['src/server/demo/actions.ts']);expect(report).toContain('runDemoControl');
 });

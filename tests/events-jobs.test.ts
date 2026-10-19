@@ -24,6 +24,7 @@ let handlers: ReturnType<typeof webhookHandlers>;
 beforeAll(async()=>{ctx=await createDatabase();},60000);
 afterAll(async()=>{await ctx?.db.close();});
 beforeEach(async()=>{
+  vi.stubEnv('MAIL_PROVIDER','agentmail');
   // Keep the existing fixture graph and clear only P5 records between cases.
   await ctx.db.query('UPDATE runs SET trigger_event_id=NULL');
   await ctx.db.query("DELETE FROM recovery_items WHERE job_id IN (SELECT id FROM jobs WHERE kind IS NOT NULL)");

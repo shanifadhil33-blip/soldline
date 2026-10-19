@@ -47,6 +47,19 @@ export class HubSpotClient {
     if (Object.keys(properties).some(key => !allowed.includes(key))) throw new Error('Deal property refused');
     return this.http.request('PATCH', `${HUBSPOT_PATHS.deals}/${segment(id)}`, crmObject, { properties });
   }
+  getDemoLineItem(id:string) {
+    return this.http.request('GET',`/crm/objects/2026-03/line_items/${segment(id)}?properties=quantity&associations=deals`,crmObject);
+  }
+  patchDemoLineItem(id:string,quantity:number) {
+    return this.http.request('PATCH',`/crm/objects/2026-03/line_items/${segment(id)}`,crmObject,{properties:{quantity:String(quantity)}});
+  }
+  createDemoDeal(name:string) {
+    return this.http.request('POST',HUBSPOT_PATHS.deals,crmObject,{properties:{dealname:name,dealstage:'appointmentscheduled',soldline_delivery_status:'Not started'}});
+  }
+  /** Called by demo operations after checking sandbox ownership. */
+  patchDemoDeal(id:string,properties:{dealstage:string;soldline_delivery_status?:string;soldline_plan_url?:string;soldline_run_ref?:string}) {
+    return this.http.request('PATCH', `${HUBSPOT_PATHS.deals}/${segment(id)}`, crmObject, {properties});
+  }
   getOwners(after?: string) {
     const path = this.verified(this.paths.owners);
     return this.http.request('GET', path + (after ? `?after=${segment(after)}` : ''), z.object({ results: z.array(z.object({ id: z.string(), email: z.email().optional(), firstName: z.string().optional(), lastName: z.string().optional() })), paging: z.object({ next: z.object({ after: z.string() }) }).optional() }));

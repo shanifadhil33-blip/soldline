@@ -79,9 +79,9 @@ export class Connections {
       await append(db, this.workspaceId, { action: 'provider_request', outcome: ok ? 'succeeded' : 'failed', target_type: provider, request_id: requestId, after: { request_id: requestId, code } });
     });
   }
-  async fault(provider: Provider): Promise<'outage' | 'revoked' | undefined> {
+  async fault(provider: Provider, operation?: string): Promise<'outage' | 'revoked' | undefined> {
     return this.tx(async db => {
-      const result = await db.query<{ mode: 'outage' | 'revoked' }>(`UPDATE demo_faults f SET fail_next=fail_next-1 FROM workspaces w WHERE f.workspace_id=$1 AND f.provider=$2 AND f.fail_next>0 AND w.id=f.workspace_id AND w.is_demo=true RETURNING f.mode`, [this.workspaceId, provider]);
+      const result = await db.query<{ mode: 'outage' | 'revoked' }>(`UPDATE demo_faults f SET fail_next=fail_next-1 FROM workspaces w WHERE f.workspace_id=$1 AND f.provider=$2 AND f.fail_next>0 AND w.id=f.workspace_id AND w.is_demo=true AND (f.operation IS NULL OR f.operation=$3) RETURNING f.mode`, [this.workspaceId, provider, operation??null]);
       return result.rows[0]?.mode;
     });
   }

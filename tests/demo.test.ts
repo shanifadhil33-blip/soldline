@@ -59,8 +59,7 @@ it('Caps live sandboxes at 60 and queues exactly one cleanup for the oldest', as
   const jobs = (await db.query<{ kind: string; payload: { clickup_folder_id: string; hubspot_deal_id: string } }>('SELECT kind,payload FROM jobs WHERE workspace_id=$1', [oldest])).rows;
   expect(jobs).toHaveLength(1);
   expect(jobs[0].kind).toBe('demo_cleanup');
-  expect(jobs[0].payload.clickup_folder_id).toBe(`sample_${oldest}`);
-  expect(jobs[0].payload.hubspot_deal_id).toMatch(/^sample_/);
+  expect(jobs[0].payload).toEqual({});
   await start();
   expect((await db.query('SELECT * FROM jobs WHERE workspace_id=$1', [oldest])).rows).toHaveLength(1);
 }, 60000);

@@ -232,7 +232,7 @@ it('Refuses credential changes by members without admin permission', async () =>
 });
 
 it('Configures the mail adapter from process style settings and encrypts its key', async () => {
-  const adapter = await configureMailFromEnv(connections, { MAIL_API_KEY: fakeToken, MAIL_INBOX_ADDRESS: inboxAddress, MAIL_API_BASE: 'https://fixtures.soldline.test/mail' });
+  const adapter = await configureMailFromEnv(connections, { MAIL_PROVIDER: 'agentmail', MAIL_API_KEY: fakeToken, MAIL_INBOX_ADDRESS: inboxAddress, MAIL_API_BASE: 'https://fixtures.soldline.test/mail' });
   respond('get', `https://fixtures.soldline.test/mail/inboxes/${encodeURIComponent(inboxAddress)}`, { inbox_id: inboxAddress });
   expect((await adapter.getInbox()).inbox_id).toBe(inboxAddress);
   await expect(configureMailFromEnv(connections, {})).rejects.toThrow('Mail key and inbox address are required');

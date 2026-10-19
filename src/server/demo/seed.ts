@@ -1,3 +1,4 @@
+import { seedSampleInbox } from '../integrations/sample-inbox';
 import { randomUUID } from 'node:crypto';
 import type { SqlConnection } from '../db/withMember';
 import type { Role } from '../permissions';
@@ -53,22 +54,24 @@ export async function seedSandbox(db: SqlConnection, ws: string, expiry: Date) {
   await insert('client_companies', { id: summit, name: 'Summit Trail Outfitters' });
   await insert('deals', { id: summitDeal, client_company_id: summit, hubspot_deal_id: `sample_${summitDeal}`, name: 'Summit Trail Outfitters, ads retainer', amount: '9000', currency: 'AED', owner_member_id: ids.omar });
   await insert('runs', { deal_id: summitDeal, run_key: `sample_${summitDeal}`, status: 'ready', plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.imran, won_at: daysAgo(9), ready_at: daysAgo(8.5) });
-  await seedWaitingItems(insert, { ws, run, cedarRun, deal, ids, expiry, daysAgo, scopeItemIds });
+  await seedSampleInbox(db, ws);
+  await seedWaitingItems(insert, { ws, run, cedarRun, deal, version, ids, expiry, daysAgo, scopeItemIds });
 }
 
 type Insert = (table: string, row: Record<string, unknown>) => Promise<void>;
 /** One waiting item for every person: the approval behind "Waiting for approval", fixes, a client email and a client review. */
-async function seedWaitingItems(insert: Insert, c: { ws: string; run: string; cedarRun: string; deal: string; ids: Record<Persona, string>; expiry: Date; daysAgo: (days: number) => string; scopeItemIds: string[] }) {
+async function seedWaitingItems(insert: Insert, c: { ws: string; run: string; cedarRun: string; deal: string; version: string; ids: Record<Persona, string>; expiry: Date; daysAgo: (days: number) => string; scopeItemIds: string[] }) {
   const refs: InputRef[] = sortedRefs([{ system: 'hubspot', record_id: `sample_${c.deal}`, version_marker: 'sample', hash: hash({ sample: c.deal }) }]);
+  const mailRefs: InputRef[] = sortedRefs([{system:'scope',record_id:c.deal,version_marker:'1',hash:hash({id:c.version,version:1,items_hash:null,status:'accepted'})}]);
   const approval = async (kind: 'provision' | 'client_email', payload: Payload, reversibility: 'reversible' | 'irreversible') => insert('approvals', {
     run_id: c.run, kind, requested_by_type: 'agent', required_roles: requiredRoles[kind], status: 'pending', payload: JSON.stringify(payload), payload_hash: hash(payload),
-    input_refs: JSON.stringify(refs), input_hash: hash(refs), reversibility, expires_at: c.expiry.toISOString(),
+    input_refs: JSON.stringify(kind==='client_email'?mailRefs:refs), input_hash: hash(kind==='client_email'?mailRefs:refs), reversibility, expires_at: c.expiry.toISOString(),
   });
   await approval('provision', { effects: [
     { system: 'clickup', location: 'Client delivery, Harbor Coffee Roasters', action: 'create_folder_and_tasks', records: [{ id: 'sample_folder', fields: { tasks: { before: 0, after: 8 } } }], amounts: {} },
     { system: 'hubspot', location: 'Harbor Coffee Roasters, growth retainer', action: 'update_deal', records: [{ id: `sample_${c.deal}`, fields: { soldline_delivery_status: { before: 'Not started', after: 'Ready' } } }], amounts: {} },
   ] }, 'reversible');
-  await approval('client_email', { effects: [{ system: 'mail', location: 'Sample inbox', action: 'send_reminder', records: [{ id: 'sample_reminder', fields: {} }], amounts: {},
+  await approval('client_email', { effects: [{ system: 'mail', location: 'Sample inbox', action: 'send_message', records: [{ id: 'sample_reminder', fields: {} }], amounts: {},
     message: { to: ['karim@harbor.example'], subject: 'Two items we still need from you', body: 'Hi Karim, we still need the brand guide files and Meta ad account access to start. Sample email, not sent.' } }] }, 'irreversible');
   const fix = (owner: Persona, run: string, title: string, reason: string) => insert('recovery_items', { run_id: run, kind: 'monitor', title, plain_reason: reason, owner_member_id: c.ids[owner], status: 'open', allowed_options: ['resolve_with_note'] });
   await fix('omar', c.run, 'Add the four missing line items in HubSpot', 'The signed scope has 8 deliverables but the deal has 4 line items.');

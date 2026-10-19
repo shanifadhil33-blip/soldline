@@ -151,3 +151,16 @@ Service credentials are managed outside the repo. Variable names and purposes ar
 ## P14 (Oct 19 2026, by hand while Codex was out of usage)
 Done: /privacy and /terms; seed sets no currency (test portal is USD only) and resets the deal to Not started; scope PDF names Imran Shaikh; agency titles Agency director (admin) and Specialist (contributor); POST /api/sign-out (same site only); Auth.js error copy, error.tsx, global-error.tsx; notifications by database triggers (drizzle/sql/0011_notifications.sql, applied on Neon) with GET /api/notifications and POST /api/notifications/read; demo seed has a waiting item for every persona and the real pending approvals behind Waiting for approval (Today data in src/server/today.ts); fail() and answer() in src/server/http.ts so no route answers an empty error.
 Open: ClickUp status write back, sample inbox provider, demo controls as real writes, the demo_cleanup job handler (6 hour cleanup), agent, memory, settings, MCP, Help and feedback. e2e specs were not rerun against the new seed.
+
+
+## P14a backend chunk A4
+
+ClickUp transitions now queue in progress, client review and complete writes; monitors treat complete as closed. Client approval keeps its existing notification trigger. SampleInboxProvider is the default, stores the three seeded client messages and labelled outbound drafts, and executes approved email as Sample, not sent with audit evidence. AgentMail requires an explicit MAIL_PROVIDER=agentmail setting.
+
+The authenticated runDemoControl server action performs all six controls through named owner services. Mark won uses a separate recorded HubSpot sandbox deal when credentials are configured, otherwise it injects a labelled durable event. Replay creates zero new actions. Line item edits stale open approvals. Task create outages consume exactly the configured count; failed execution creates normal recovery work. Inbox revocation is simulated.
+
+Tick and daily jobs queue expired sandbox cleanup with a five sandbox cap. Cleanup deletes only recorded created ClickUp folders, restores recorded HubSpot deal stages and delivery fields, records partial progress, retries failures and finally removes sandbox workspace rows. New migration 0012_demo_backend.sql adds the mail and resource ledgers, scoped app grants with write checks, and sandbox deletion dependencies.
+
+Open: live acceptance and deployment migration remain for the reviewer. No live provider or database call was made. Agent, memory, settings, MCP, Help and feedback remain outside this backend chunk. No visual changes or new screens were made.
+
+P14a verification: Node v22.23.3, pnpm gate EXIT=0, all 645 tests across 43 files, lint, typecheck and the production build passed. Sixteen new focused backend tests cover items 8 through 11. See docs/P14a.md for files per item, test coverage and limits.

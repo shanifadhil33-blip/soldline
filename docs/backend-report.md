@@ -157,3 +157,21 @@ The existing run read now includes staff approval payloads, visible audit rows a
 Server actions: none. Trust controls call route handlers. Input mutation and client deliverable approval routes were absent before P13 and are narrow additions. Client approval records the local review decision and does not claim a remote ClickUp mutation.
 
 Notifications (P14, Oct 19 2026): migration 0011_notifications.sql adds triggers so every write path notifies. New approval: every member whose roles can approve it, not the requester. Decision: the requester and the account manager. Stale: approvers, once. Recovery opened: its owner. Recovery resolved: account manager and delivery lead. Client input received and client review approved: account manager and delivery lead. Connection needs reconnect or revoked: agency directors, at most once an hour. Never the actor, never a client reviewer, deduped, in the member's language.
+
+## P14a backend chunk A4
+
+`PATCH /api/deliverables/[id]` queues a ClickUp status update for an authorized delivery lead, agency director or assigned specialist. State started writes in progress and state review writes client review.
+
+`POST /api/deliverables/[id]` retains the company scoped client approval and atomically queues complete in ClickUp. The existing notification trigger handles the approval notification.
+
+`GET /api/runs/[id]` includes persisted sample inbox messages and labelled outbound drafts for staff. Client responses retain company isolation.
+
+Server action: `runDemoControl` in `src/server/demo/actions.ts`. It authenticates the cookie, checks permissions and calls the named owner operation, which rechecks an active sandbox, stored roles and run membership. Commands are mark_won, replay, change_line_item, clickup_outage, sample_email and revoke_inbox. The action returns status and a plain message; no screen or visual change was made. The earlier Server actions: none inventory above describes P10 through P13 only.
+
+Tick and daily scheduling (`POST /api/jobs/tick`, `GET /api/jobs/daily`, `POST /api/jobs/daily`) now queue at most five expired sandbox cleanups. Worker invocations process at most five cleanup jobs. Resource ids come exclusively from the sandbox ledger, never a job payload. Completed remote cleanup steps are saved before retrying another provider. The workspace cascade removes the sandbox rows only after every resource is clean. Failures retain a recovery note and retry on a later tick.
+
+Mail defaults to the database SampleInboxProvider. AgentMail worker and executor access requires MAIL_PROVIDER=agentmail. No real mail credential is needed for demo mail. Outbound drafts and simulated sending always carry Sample, not sent. HubSpot controls use configured connection credentials to create a separate sample deal and record its seed stage before marking it won. An existing deal is reused only when snapshot.demo_sandbox matches the workspace id. The seeded base deal is never patched. Without credentials, the control inserts a labelled event through the same durable event service as the webhook.
+
+New migration: drizzle/sql/0012_demo_backend.sql. Apply it before deploying. Local verification uses MSW and PGlite only; no external provider call or migration was run.
+
+Configured line item control reads the upstream item and requires exactly one deal association matching the sandbox deal before patching quantity. It refuses the seeded base deal. Plain sample line items are changed locally and labelled as sample. The source file inventory and test details are in docs/P14a.md.

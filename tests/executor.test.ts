@@ -52,6 +52,7 @@ beforeAll(async()=>{
 },60000);
 afterAll(async()=>{await database?.db.close();vi.unstubAllEnvs();});
 beforeEach(async()=>{
+  vi.stubEnv('MAIL_PROVIDER','agentmail');
   // Previous scenarios stay durable but their jobs must not be selected by this scenario.
   await database.db.query("UPDATE jobs SET status='cancelled' WHERE workspace_id=$1",[f.ws]);
   await database.db.query("UPDATE rate_buckets SET tokens=100,updated_at=now() WHERE workspace_id=$1",[f.ws]);

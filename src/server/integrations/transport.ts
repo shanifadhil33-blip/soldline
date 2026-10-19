@@ -19,7 +19,7 @@ export class Transport {
   async request<T>(method: string, path: string, schema: z.ZodType<T>, body?: unknown): Promise<T> {
     const { connections } = this.options;
     const { token, bucketKey } = await connections.load(this.provider);
-    const fault = await connections.fault(this.provider);
+    const fault = await connections.fault(this.provider,method==='POST'&&/\/list\/[^/]+\/task$/.test(path)?'task_create':undefined);
     if (fault) {
       const id = randomUUID();
       if (fault === 'revoked') {
@@ -47,6 +47,7 @@ export class Transport {
         await connections.record(this.provider, id, 'network', false);
         throw new Retryable();
       }
+      if (method==='DELETE'&&response.status===404) {await connections.record(this.provider,id,'404',true);return schema.parse(undefined);}
       if (response.status === 401 || response.status === 403) {
         await connections.markNeedsReconnect(this.provider, String(response.status) as '401' | '403', id);
         throw new NeedsReconnect();
