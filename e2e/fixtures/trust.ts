@@ -19,7 +19,7 @@ export async function prepareTrust(owner:TransactionDriver,ws:string) {
       await db.query("INSERT INTO jobs(id,workspace_id,run_id,kind,status,attempts,payload) VALUES($1,$2,$3,'analyse_deal','dead',5,'{}')",[job,ws,harbor.id]);
       await db.query("INSERT INTO recovery_items(workspace_id,run_id,job_id,owner_member_id,title,plain_reason,status,allowed_options,created_at) VALUES($1,$2,$3,$4,$5,'Review the recorded issue before continuing','open',$6,now()+($7::text||' seconds')::interval)",[ws,harbor.id,job,lead,['Review delivery note','Retry delivery work','Check sent mail','Cancel remaining work'][index],[option],index]);
     }
-    await db.query("INSERT INTO connections(workspace_id,provider,status,scopes,allowed_actions) VALUES($1,'mail','needs_reconnect',ARRAY['mail:read','mail:send'],'[\"send_message\"]')",[ws]);
+    await db.query("INSERT INTO connections(workspace_id,provider,status,scopes,allowed_actions) VALUES($1,'mail','needs_reconnect',ARRAY['mail:read','mail:send'],'[\"send_message\"]') ON CONFLICT (workspace_id,provider) DO UPDATE SET status=EXCLUDED.status,scopes=EXCLUDED.scopes,allowed_actions=EXCLUDED.allowed_actions",[ws]);
     await db.query("UPDATE connections SET scopes=ARRAY['crm.objects.deals.read','crm.objects.deals.write'],allowed_actions='[\"patch_deal_properties\"]' WHERE workspace_id=$1 AND provider='hubspot'",[ws]);
     await db.query("UPDATE connections SET scopes=ARRAY['tasks:read','tasks:write'],allowed_actions='[\"create_task\",\"create_list\"]' WHERE workspace_id=$1 AND provider='clickup'",[ws]);
   });

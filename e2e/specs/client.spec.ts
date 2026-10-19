@@ -12,8 +12,8 @@ for(const width of [360,390,1440])for(const locale of ['en','ar'] as const)test(
   await page.getByRole('button',{name:t.approve,exact:true}).click();
   await expect(page.getByText(t.approved,{exact:true})).toBeVisible();
   await page.goto('/inputs');
-  await page.getByRole('button',{name:t.confirmInput,exact:true}).click();
-  await expect(page.getByText(t.received,{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:t.confirmInput,exact:true}).first().click();
+  await expect(page.getByText(t.received,{exact:true}).first()).toBeVisible();
   const own=await(await page.request.get('/api/client')).json();
   expect(own.runs).toHaveLength(1);expect(own.runs[0].name).toContain('Cedar');
   await fits(page,width);

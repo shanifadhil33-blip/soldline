@@ -30,7 +30,8 @@ export const coreHandlers=[http.all('https://api.clickup.com/*',async({request})
 })];
 export async function prepareCore(owner:TransactionDriver,services:ReturnType<typeof ownerServices>,ws:string) {
   const setup=await owner.transaction(async db=>{
-    if((await db.query('SELECT id FROM approvals WHERE workspace_id=$1',[ws])).rows.length)return null;
+    // The demo seed now holds display approvals, so mark fixture preparation by its own analyse job instead.
+    if((await db.query("SELECT id FROM jobs WHERE workspace_id=$1 AND kind='analyse_deal' AND dedupe_key LIKE 'deal:%:analyse'",[ws])).rows.length)return null;
     const members=(await db.query<Member&{preferred_name:string}>('SELECT *,true AS is_demo FROM members WHERE workspace_id=$1',[ws])).rows;
     const omar=members.find(m=>m.preferred_name==='omar')!,imran=members.find(m=>m.preferred_name==='imran')!,ravi=members.find(m=>m.preferred_name==='ravi')!;
     const run=(await db.query<{id:string;deal_id:string;scope_version_id:string;hubspot_deal_id:string}>('SELECT r.*,d.hubspot_deal_id FROM runs r JOIN deals d ON d.id=r.deal_id WHERE r.workspace_id=$1 AND r.scope_version_id IS NOT NULL',[ws])).rows[0];
@@ -40,10 +41,12 @@ export async function prepareCore(owner:TransactionDriver,services:ReturnType<ty
     const plan={tasks:scopeTitles.map((title,i)=>({scopeItem:i+1,title,list:['Setup','Content','Ads','Reporting'][Math.floor(i/2)],owner:ravi.id,due:new Date(now.getTime()+86400000*(i+1)).toISOString()}))};
     await db.query('UPDATE runs SET plan=$2,delivery_lead_id=$3,won_at=$4 WHERE id=$1',[run.id,JSON.stringify(plan),imran.id,won]);
     await db.query("UPDATE onboarding_inputs SET requested_at=now()-interval '4 days' WHERE run_id=$1",[run.id]);
+    // Replace the seeded display approvals with the executable fixture approvals created below.
+    await db.query('DELETE FROM approvals WHERE run_id=$1',[run.id]);
     await db.query('DELETE FROM findings WHERE run_id=$1',[run.id]);
     for(const title of [scopeTitles[0],scopeTitles[1],scopeTitles[5],scopeTitles[6]])await db.query("INSERT INTO findings(workspace_id,run_id,kind,severity,status,title,owner_member_id,evidence) VALUES($1,$2,'scope_mismatch','block','open',$3,$4,$5)",[ws,run.id,`No HubSpot line item for ${title}.`,ravi.id,JSON.stringify([{source:'Signed scope page 2',quote:title,record_ref:'No matching line item',rule:'sold_not_in_crm'}])]);
     await db.query("INSERT INTO findings(workspace_id,run_id,kind,severity,status,title,evidence) VALUES($1,$2,'missing_input','warn','open','No Meta ad account access yet.',$3)",[ws,run.id,JSON.stringify([{source:'Client inputs',quote:'Meta ad account access not received',record_ref:'Meta ad account access',rule:'missing_input'}])]);
-    for(const provider of ['hubspot','clickup'])await db.query("INSERT INTO connections(workspace_id,provider,status,external_account_id,token_ciphertext,won_stage_id,delivery_lead_id) VALUES($1,$2,'connected','sample',$3,'won',$4)",[ws,provider,encryptToken('local fixture only '+ws),imran.id]);
+    for(const provider of ['hubspot','clickup'])await db.query("INSERT INTO connections(workspace_id,provider,status,external_account_id,token_ciphertext,won_stage_id,delivery_lead_id) VALUES($1,$2,'connected','sample',$3,'won',$4) ON CONFLICT (workspace_id,provider) DO UPDATE SET status=EXCLUDED.status,external_account_id=EXCLUDED.external_account_id,token_ciphertext=EXCLUDED.token_ciphertext,won_stage_id=EXCLUDED.won_stage_id,delivery_lead_id=EXCLUDED.delivery_lead_id",[ws,provider,encryptToken('local fixture only '+ws),imran.id]);
     const eventId=randomUUID(),event={portalId:'sample',eventId,objectId:run.hubspot_deal_id,subscriptionType:'deal.propertyChange',propertyName:'dealstage',propertyValue:'won'};
     await db.query("INSERT INTO inbound_events(id,workspace_id,source,dedupe_key,raw,received_at) VALUES($1,$2,'hubspot',$3,$4,now())",[eventId,ws,eventId,JSON.stringify(event)]);
     await db.query('UPDATE runs SET trigger_event_id=$2 WHERE id=$1',[run.id,eventId]);
