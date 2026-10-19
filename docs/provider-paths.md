@@ -33,14 +33,18 @@ Defaults now in code: `HUBSPOT_CONFIRMED_PATHS` (src/server/integrations/hubspot
 | Create task | POST `/list/{id}/task` with markdown_content, time_estimate, tags | Live 200; the create response has NO markdown_description, read it back with `include_markdown_description=true` |
 | List tasks | GET `/list/{id}/task?include_markdown_description=true&subtasks=true&page=` | Live 200, `last_page` present |
 | Comment | POST `/task/{id}/comment` | Live 200; `id` is a NUMBER (entity schema already coerces) |
-| Update task status | PUT `/task/{id}` | Live; space "Client delivery" (90149400327) now has `to do`, `in progress`, `client review` and `complete` (added in the browser Oct 18 2026; before that "in progress" returned 400) |
+| Update task status | PUT `/task/{id}` | Live; all four statuses exist in space "Client delivery" (90149400327) now has `to do`, `in progress`, `client review` and `complete` (added in the browser Oct 18 2026; before that "in progress" returned 400) |
 | Delete task | DELETE `/task/{id}` | Live 204, empty body |
 | Webhook create, list, delete | POST `/team/{id}/webhook`, GET same, DELETE `/webhook/{id}` | Live 200; response `{id, webhook:{id, secret(64), health, ...}}` matches the code; test webhook deleted |
 | Folder templates | Not used. Soldline creates the folder and lists directly, so no template readiness polling is needed. The workspace has no task templates (GET `/team/{id}/taskTemplate` empty) | Live |
 
-Space statuses needed by monitors: `to do`, `in progress`, `client review`, `complete`. ClickUp v2 has no endpoint to edit space statuses; add them once in the browser (Space settings, Statuses).
+Space statuses read by monitors: `to do`, `in progress`, `client review`, `complete`. All four were added in the browser on Oct 18 2026. Starting a task writes `in progress`, handing it to the client writes `client review`, and client approval queues `complete`.
 
-## Team inbox (adhil+bilal@mail.grokbot.com)
+## Sample inbox default (P14a)
+
+The database SampleInboxProvider is the default for polling and approved email execution. Every demo workspace has Harbor and Laith threads, including the untrusted scope request and Karim input reply. Drafts and simulated sends are stored with status `Sample, not sent` (`عينة، لم تُرسل`). No mail network request is made. Inbox revocation is a labelled simulated connection state. The real adapter below is retained only for explicit `MAIL_PROVIDER=agentmail` setup.
+
+## Real adapter reference (adhil+bilal@mail.grokbot.com)
 See fix-plan A2 "Team inbox". The address is a plus alias of the Grok Bot native inbox adhil@mail.grokbot.com. It is NOT an AgentMail inbox (the connected AgentMail org lists 0 inboxes) and there is no API key for it. The adapter paths match the AgentMail OpenAPI (`https://api.agentmail.to/v0/inboxes/{inbox_id}/messages|threads/{id}|drafts|drafts/{id}/send`, 401 without a key), with these mismatches to fix when a real AgentMail inbox exists:
 - CreateDraftRequest has no `headers` field; use `client_id` for idempotency instead of a Message-ID header.
 - List messages has no `message_id` filter; sent search must match `client_id` or headers from get message.

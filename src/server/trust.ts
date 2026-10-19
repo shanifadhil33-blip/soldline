@@ -1,4 +1,5 @@
 import 'server-only';
+import { deliveryStatuses } from './integrations/clickup';
 import { append, verifyChain } from './audit';
 import { assertCan, ForbiddenError, type Member } from './permissions';
 import { Connections, type Provider } from './integrations/connections';
@@ -72,14 +73,28 @@ export function trustStore(owner:TransactionDriver) {
       } else await connections[operation](provider);
       return {status:200};
     },
+    async transitionDeliverable(member:Member,id:string,state:'started'|'review') {
+      return owner.transaction(async db=>{
+        const actor=await identity(db,member);
+        if(!actor||!actor.roles.some(role=>['admin','delivery_lead','contributor'].includes(role)))return {status:403};
+        const row=(await db.query<{run_id:string;status:string;observed_at:string}>(`SELECT t.run_id,t.status,t.observed_at FROM monitor_tasks t WHERE t.workspace_id=$1 AND t.task_id=$2 AND (NOT ('contributor'=ANY($3::text[])) OR EXISTS(SELECT 1 FROM members m WHERE m.workspace_id=t.workspace_id AND m.id=$4 AND (m.clickup_user_id=ANY(t.assignee_ids) OR m.preferred_name=ANY(t.assignee_ids)))) FOR UPDATE`,[actor.workspace_id,id,actor.roles,actor.id])).rows[0];
+        if(!row)return {status:404};
+        const status=deliveryStatuses[state];
+        if(row.status===status)return {status:200};
+        await db.query(`INSERT INTO jobs(workspace_id,run_id,kind,dedupe_key,payload,status,next_attempt_at) VALUES($1,$2,'task_status',$3,$4,'queued',now()) ON CONFLICT DO NOTHING`,[actor.workspace_id,row.run_id,'task_status:'+id+':'+status+':'+row.observed_at,JSON.stringify({taskId:id,status})]);
+        await append(db,actor.workspace_id,{action:'task_status_requested',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id,status}});
+        return {status:200};
+      });
+    },
     async approveDeliverable(member:Member,id:string,guard=assertCan) {
       return owner.transaction(async db=>{
         const actor=await identity(db,member);if(!actor)return {status:404};
-        const row=(await db.query<{run_id:string;status:string;company:string;already_approved:boolean}>(`SELECT t.run_id,t.status,t.client_approved_at>=coalesce(t.review_since,t.observed_at) AS already_approved,d.client_company_id AS company FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE t.workspace_id=$1 AND t.task_id=$2 FOR UPDATE OF t`,[actor.workspace_id,id])).rows[0];
+        const row=(await db.query<{run_id:string;status:string;company:string;already_approved:boolean;review_cycle:string}>(`SELECT t.run_id,t.status,coalesce(t.review_since,t.observed_at)::text AS review_cycle,t.client_approved_at>=coalesce(t.review_since,t.observed_at) AS already_approved,d.client_company_id AS company FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE t.workspace_id=$1 AND t.task_id=$2 FOR UPDATE OF t`,[actor.workspace_id,id])).rows[0];
         if(!row||!actor.roles.includes('client_reviewer')||row.company!==actor.client_company_id)return {status:404};
         guard(actor,'see_runs',{workspace_id:actor.workspace_id,client_company_id:row.company});
         if(row.status.toLowerCase()!=='client review'||row.already_approved)return {status:409};
         await db.query("UPDATE monitor_tasks SET review_since=coalesce(review_since,observed_at),client_approved_at=now(),client_approved_by=$4 WHERE workspace_id=$1 AND run_id=$2 AND task_id=$3",[actor.workspace_id,row.run_id,id,actor.id]);
+        await db.query(`INSERT INTO jobs(workspace_id,run_id,kind,dedupe_key,payload,status,next_attempt_at) VALUES($1,$2,'task_status',$3,$4,'queued',now()) ON CONFLICT DO NOTHING`,[actor.workspace_id,row.run_id,'client_complete:'+id+':'+row.review_cycle,JSON.stringify({taskId:id,status:deliveryStatuses.approved})]);
         await append(db,actor.workspace_id,{action:'deliverable_approved',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id}});
         return {status:200};
       });

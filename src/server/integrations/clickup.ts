@@ -2,6 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import { Transport, type TransportOptions, entity, emptyResponse, segment } from './transport';
 export const CLICKUP_PATHS = { team: '/api/v2/team', space: '/api/v2/space', folder: '/api/v2/folder', list: '/api/v2/list', task: '/api/v2/task' } as const;
+export const deliveryStatuses = { queued: 'to do', started: 'in progress', review: 'client review', approved: 'complete' } as const;
 export interface TaskInput {
   name: string; markdown_content?: string; assignees?: number[]; due_date?: number; due_date_time?: boolean;
   time_estimate?: number; status?: string; tags?: string[];
@@ -27,6 +28,7 @@ export class ClickUpClient {
   archiveFolder(id: string) { return this.http.request('PUT', `${CLICKUP_PATHS.folder}/${segment(id)}`, entity, { archived: true }); }
   updateTask(id: string, input: TaskUpdate) { return this.http.request('PUT', `${CLICKUP_PATHS.task}/${segment(id)}`, task, input); }
   archiveTask(id: string) { return this.http.request('PUT', `${CLICKUP_PATHS.task}/${segment(id)}`, task, { archived: true }); }
+  deleteFolder(id: string) { return this.http.request('DELETE', `${CLICKUP_PATHS.folder}/${segment(id)}`, emptyResponse); }
   deleteTask(id: string) { return this.http.request('DELETE', `${CLICKUP_PATHS.task}/${segment(id)}`, emptyResponse); }
   addComment(id: string, text: string) { return this.http.request('POST', `${CLICKUP_PATHS.task}/${segment(id)}/comment`, entity, { comment_text: text, notify_all: false }); }
   async createWebhook(teamId: string, input: WebhookInput) {

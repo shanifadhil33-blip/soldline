@@ -20,3 +20,11 @@ export async function POST(request:Request,context:{params:Promise<Record<string
   const {status}=await getOwnerServices().trust.approveDeliverable(member,id,(actor,action,resource)=>assertCan(actor,action,resource));
   return answer(status,'Deliverable approved');
 }
+
+export const PATCH=withMemberRoute(async(request,context,member)=>{
+  const {id}=await context.params;
+  const body=await request.json().catch(()=>null);
+  if(body?.state!=='started'&&body?.state!=='review')return answer(400,'');
+  const {status}=await getOwnerServices().trust.transitionDeliverable(member,id,body.state);
+  return answer(status,'Task update queued');
+});
