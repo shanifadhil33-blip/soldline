@@ -131,7 +131,7 @@ async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:str
     const draft=await providers.mail().createDraft({to:message.to,subject:message.subject,text:message.body,messageId});
     await store.observe(e,{...observation,draft_id:draft.draft_id});
     const sent=await providers.mail().sendDraft(draft.draft_id);
-    await store.set(e,'succeeded',{...observation,draft_id:draft.draft_id},sent.message_id);return;
+    await store.set(e,'succeeded',{...observation,draft_id:draft.draft_id,...(sent.sample?{status:sent.status,sample:true}:{})},sent.message_id);return;
   }
   if(e.system==='soldline' && e.action==='accept_scope_change') {await store.scopeChange(e);return;}
   if(e.system==='soldline' && e.action==='create_recovery') {

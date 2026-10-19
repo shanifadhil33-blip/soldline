@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { Connections, type Provider } from '../integrations/connections';
+import { SampleInboxProvider } from '../integrations/sample-inbox';
 import { MAIL_PATHS, type MailProvider } from '../integrations/mail';
 import { z } from 'zod';
 import { HUBSPOT_PATHS, crmObject, crmPage, type HubSpotClient } from '../integrations/hubspot';
@@ -22,9 +23,9 @@ export class WorkerConnections extends Connections {
       return {token,bucketKey:createHash('sha256').update(provider==='hubspot'?c.external_account_id:token).digest('hex')};
     });
   }
-  override async fault(provider: Provider): Promise<'outage'|'revoked'|undefined> {
+  override async fault(provider: Provider, operation?: string): Promise<'outage'|'revoked'|undefined> {
     return this.operation(async db=>{
-      const r=await db.query<{mode:'outage'|'revoked'}>(`UPDATE demo_faults f SET fail_next=fail_next-1 FROM workspaces w WHERE f.workspace_id=$1 AND f.provider=$2 AND f.fail_next>0 AND w.id=f.workspace_id AND w.is_demo=true RETURNING f.mode`,[this.workspaceId,provider]);
+      const r=await db.query<{mode:'outage'|'revoked'}>(`UPDATE demo_faults f SET fail_next=fail_next-1 FROM workspaces w WHERE f.workspace_id=$1 AND f.provider=$2 AND f.fail_next>0 AND w.id=f.workspace_id AND w.is_demo=true AND (f.operation IS NULL OR f.operation=$3) RETURNING f.mode`,[this.workspaceId,provider,operation??null]);
       if(r.rows[0]) await systemAudit(db,this.workspaceId,'system','provider_fault',provider);
       return r.rows[0]?.mode;
     });
@@ -89,6 +90,7 @@ export function systemProviders(owner: TransactionDriver, key?: string) {
   }
   return {
     mail(ws: string, inbox: string, deadline=Date.now()+25000): Pick<MailProvider,'listMessagesSince'> {
+      if(process.env.MAIL_PROVIDER!=='agentmail')return new SampleInboxProvider(owner,ws);
       return {async listMessagesSince(cursor) {
         const schema=z.object({messages:z.array(z.object({message_id:z.string(),thread_id:z.string().optional(),to:z.array(z.string()).optional(),subject:z.string().optional(),text:z.string().optional(),timestamp:z.string().optional()}).passthrough()),next_page_token:z.string().optional()});
         return read(ws,'mail',(process.env.MAIL_API_BASE ?? 'https://api.agentmail.to/v0').replace(/\/$/,'')+MAIL_PATHS.messages(inbox)+'?'+new URLSearchParams({after:cursor}),schema,deadline);

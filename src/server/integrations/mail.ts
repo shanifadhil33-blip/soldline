@@ -49,6 +49,7 @@ export class AgentMailProvider implements MailProvider {
 /** Explicit admin setup. Request methods subsequently load the encrypted credential. */
 export async function configureMailFromEnv(connections: TransportOptions['connections'], env: Record<string, string | undefined> = process.env) {
   if (!env.MAIL_API_KEY || !env.MAIL_INBOX_ADDRESS) throw new Error('Mail key and inbox address are required');
+  if(env.MAIL_PROVIDER!=='agentmail')throw new Error('Select AgentMail explicitly before configuring real mail');
   await connections.storeToken('mail', env.MAIL_API_KEY, env.MAIL_INBOX_ADDRESS);
   return new AgentMailProvider({ connections, inbox: env.MAIL_INBOX_ADDRESS, base: env.MAIL_API_BASE });
 }

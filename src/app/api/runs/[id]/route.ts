@@ -1,3 +1,4 @@
+import { language, loadMessages } from '../../../../lib/i18n';
 import { z } from 'zod';
 import { withMemberRoute } from '../../../../server/http';
 import { assertCan } from '../../../../server/permissions';
@@ -19,5 +20,6 @@ export const GET=withMemberRoute(async (_request,context,member,db)=>{
   const history=(await db.query("SELECT id,at,action,outcome,actor_name_at_event FROM audit_log WHERE target_id=$1 OR approval_id IN (SELECT id FROM approvals WHERE run_id=$1::uuid) ORDER BY id",[id])).rows;
   const title=(await db.query<{name:string}>('SELECT name FROM deals WHERE id=(SELECT deal_id FROM runs WHERE id=$1)',[id])).rows[0]?.name;
   const members=(await db.query('SELECT id,display_name,clickup_user_id FROM members WHERE archived_at IS NULL')).rows;
-  return Response.json({run,scope,items,inputs,findings,approvals,history,title,members,isDemo:member.is_demo});
+  const emails=(await db.query('SELECT id,direction,raw,status FROM sample_mail WHERE run_id=$1 ORDER BY created_at,id',[id])).rows.map(email=>({...email,status:loadMessages(language(_request.headers.get('x-soldline-language')??undefined)).backendA4.sampleNotSent}));
+  return Response.json({emails,run,scope,items,inputs,findings,approvals,history,title,members,isDemo:member.is_demo});
 });
