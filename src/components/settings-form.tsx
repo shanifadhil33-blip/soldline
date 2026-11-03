@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { loadMessages, type Language } from '../lib/i18n';
+import { clockFace } from '../lib/plain';
 
 type Personal = { preferredName?: string; language?: 'en' | 'ar'; digestTime?: string; agentName?: string };
 
@@ -15,9 +16,9 @@ export function SettingsForm({ locale }: { locale: Language }) {
     void fetch('/api/settings', { cache: 'no-store' }).then(async response => {
       if (!response.ok) return;
       const body = await response.json() as Personal;
-      setForm(current => ({ ...current, ...body }));
+      setForm(current => ({ ...current, ...body, language: locale, digestTime: clockFace(body.digestTime) ?? current.digestTime }));
     }).catch(() => setError(true));
-  }, []);
+  }, [locale]);
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setError(false);

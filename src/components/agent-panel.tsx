@@ -15,7 +15,7 @@ export function AgentPanel({ locale }: { locale: Language }) {
     setBusy(true);
     setError(false);
     try {
-      const response = await fetch('/api/agent/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text.trim() }) });
+      const response = await fetch('/api/agent/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text.trim(), language: locale }) });
       if (!response.ok) throw new Error();
       const body = await response.json() as { intro?: string; rows?: { label: string; count: number }[] };
       setAnswer(body.intro ?? '');

@@ -82,7 +82,8 @@ h1, h2, strong { font-weight: 600; }
 .count-badge { display: inline-grid; place-items: center; min-inline-size: 24px; block-size: 24px; padding-inline: 4px; border: 1px solid currentColor; border-radius: 12px; font-size: 12px; }
 .phone-tabs { display: none; }
 .more-navigation { max-inline-size: 640px; margin-block-start: 24px; }
-.more-navigation a { border-block-end: 1px solid var(--border); }
+.more-navigation a { border-block-end: 1px solid var(--border); min-block-size: 48px; font-size: 18px; }
+.more-lead { font-size: 18px; margin-block: 16px; }
 .reset-dialog { max-inline-size: min(480px, calc(100% - 32px)); padding-block: 24px; padding-inline: 24px; background: var(--background); color: var(--text); }
 .reset-dialog::backdrop { background: rgb(40 26 13 / 30%); }
 .reset-dialog h2 { font-size: 24px; margin-block-end: 16px; }
