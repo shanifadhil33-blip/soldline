@@ -100,6 +100,28 @@ test('Demo error allows retry and announces creating and ready', async ({ page }
   await expect(page.getByRole('status')).toContainText(en.demo.ready);
 });
 
+test('Arabic phone tabs open their own pages and the project list shows its link', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/demo?lang=ar');
+  await page.getByRole('button', { name: new RegExp(ar.demo.people.imran) }).click();
+  await page.getByRole('link', { name: ar.demo.open }).click();
+  await page.waitForURL(/\/today/);
+  const tabs = [['/runs', ar.nav.runs], ['/recovery', ar.nav.recovery], ['/today', ar.nav.needs], ['/audit-log', ar.nav.audit], ['/more', ar.nav.more]] as const;
+  for (const [href, name] of tabs) {
+    const link = page.locator(`.phone-tabs a[href="${href}"]`);
+    await expect(link).toHaveText(name);
+    const box = await link.boundingBox();
+    if (!box) throw new Error(`Missing tab ${href}`);
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(page).toHaveURL(new RegExp(`${href.replaceAll('/', '\\/')}(?:\\?|$)`));
+  }
+  await page.locator('.phone-tabs a[href="/runs"]').click();
+  const project = page.locator('.runs-phone a[href^="/runs/"]');
+  await expect(project.first()).toBeVisible();
+  const linkBox = await project.first().boundingBox();
+  expect(linkBox && linkBox.y + linkBox.height).toBeLessThan(844 - 72);
+});
+
 test('Existing sign in and memory pages still render without starting sign in', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });

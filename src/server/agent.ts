@@ -39,9 +39,9 @@ export async function postMessage(db:SqlConnection,m:Member,input:z.infer<typeof
   const memories=(await db.query("SELECT text FROM memories WHERE workspace_id=$1 AND status='active' AND deleted_at IS NULL AND ((scope='person' AND member_id=$2) OR (scope='org' AND NOT ('client_reviewer'=ANY(app_roles($1)))))",[m.workspace_id,m.id])).rows;
   const configured=Number(process.env.AGENT_DAILY_AI_CAP??20);
   const cap=Number.isInteger(configured)&&configured>=0?configured:20;
-  const wording=await agentWording({question:input.message,data,memories},async()=>!!(await db.query<{ok:boolean}>('SELECT agent_reserve_ai($1) AS ok',[cap])).rows[0].ok);
-  // Generated text is never an action, identifier or fact source. Data and links are rendered deterministically.
-  const intro=wording&&!/[\u2013\u2014]| - |https?:|\b(approve|execute|ignore)\b/i.test(wording)?wording:c.summary;
+  await agentWording({question:input.message,data,memories},async()=>!!(await db.query<{ok:boolean}>('SELECT agent_reserve_ai($1) AS ok',[cap])).rows[0].ok);
+  // Model text is not shown. The reply is the reviewed sentence for the active language.
+  const intro=c.summary;
   const rows=Object.entries(data).map(([key,items])=>({label:c[key as keyof typeof c]??key,count:items.length,records:items.map(r=>{const raw=String(r.name??r.title??r.label??r.kind??r.status??'');return {id:r.id,name:input.language?demoPhrase(raw,input.language):raw,link:r.run_id?'/runs/'+r.run_id:key==='runs'?'/runs/'+r.id:'/inputs'};})}));
   const thread=input.threadId??(await db.query<{id:string}>('INSERT INTO agent_threads(workspace_id,member_id,title) VALUES($1,$2,$3) RETURNING id',[m.workspace_id,m.id,input.message.slice(0,80)])).rows[0].id;
   await db.query("INSERT INTO agent_messages(workspace_id,member_id,thread_id,role,body) VALUES($1,$2,$3,'user',$4),($1,$2,$3,'agent',$5)",[m.workspace_id,m.id,thread,input.message,JSON.stringify({label:c.answered,intro,rows})]);

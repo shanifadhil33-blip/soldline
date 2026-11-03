@@ -5,10 +5,14 @@ import { clockFace } from '../lib/plain';
 
 type Personal = { preferredName?: string; language?: 'en' | 'ar'; digestTime?: string; agentName?: string };
 
-export function SettingsForm({ locale }: { locale: Language }) {
+function savedLanguage(value: string | undefined, locale: Language): 'en' | 'ar' {
+  return value === 'ar' || value === 'en' ? value : locale;
+}
+
+export function SettingsForm({ locale, initial = null }: { locale: Language; initial?: Personal | null }) {
   const m = loadMessages(locale).preferences;
   const common = loadMessages(locale).screens;
-  const [form, setForm] = useState<Personal>({ language: locale, digestTime: '08:00' });
+  const [form, setForm] = useState<Personal>({ ...initial, language: savedLanguage(initial?.language, locale), digestTime: clockFace(initial?.digestTime) ?? '09:00' });
   const [note, setNote] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState(false);
@@ -16,7 +20,7 @@ export function SettingsForm({ locale }: { locale: Language }) {
     void fetch('/api/settings', { cache: 'no-store' }).then(async response => {
       if (!response.ok) return;
       const body = await response.json() as Personal;
-      setForm(current => ({ ...current, ...body, language: locale, digestTime: clockFace(body.digestTime) ?? current.digestTime }));
+      setForm({ ...body, language: savedLanguage(body.language, locale), digestTime: clockFace(body.digestTime) ?? '09:00' });
     }).catch(() => setError(true));
   }, [locale]);
   async function save(event: React.FormEvent) {
@@ -24,8 +28,13 @@ export function SettingsForm({ locale }: { locale: Language }) {
     setError(false);
     const payload = Object.fromEntries(Object.entries(form).filter(([, value]) => value !== '' && value != null));
     const response = await fetch('/api/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setStatus(response.ok ? m.saved : '');
-    setError(!response.ok);
+    if (response.ok) {
+      const saved = await response.json() as Personal;
+      setForm({ ...saved, language: savedLanguage(saved.language, locale), digestTime: clockFace(saved.digestTime) ?? form.digestTime });
+      if (saved.language === 'en' || saved.language === 'ar') document.cookie = `soldline_language=${saved.language};path=/;max-age=31536000;samesite=lax`;
+      setStatus(m.saved);
+      setError(false);
+    } else setError(true);
   }
   async function sendNote(event: React.FormEvent) {
     event.preventDefault();
