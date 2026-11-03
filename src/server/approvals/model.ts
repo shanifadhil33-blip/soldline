@@ -19,5 +19,10 @@ export function canonical(value:unknown):string {
 }
 export function hash(value:unknown) {return createHash('sha256').update(canonical(value)).digest('hex');}
 export function sortedRefs(refs:InputRef[]) {return [...refs].sort((a,b)=>canonical(a)<canonical(b)?-1:canonical(a)>canonical(b)?1:0);}
+/** The same field values the approvals store writes, so a seed row is an exact approval. */
+export function exactApprovalFields(kind:Kind,payload:Payload,inputRefs:InputRef[],reversibility:CreateApproval['reversibility'],expiresAt:string) {
+  const refs=sortedRefs(inputRefs);
+  return {kind,requested_by_type:'agent' as const,required_roles:requiredRoles[kind],status:'pending' as const,payload:JSON.stringify(payload),payload_hash:hash(payload),input_refs:JSON.stringify(refs),input_hash:hash(refs),reversibility,expires_at:expiresAt};
+}
 export type Approval = Record<string,unknown> & {id:string;workspace_id:string;run_id:string;kind:Kind;requested_by_type:'user'|'agent';requested_by_member_id:string|null;status:string;payload:Payload;payload_hash:string;input_refs:InputRef[];input_hash:string;reversibility:CreateApproval['reversibility'];expires_at:string;decided_by:string|null;decided_at:string|null;confirmed_by:string|null;confirmed_at:string|null;decisions:{member_id:string;decision:string;note:string}[];execution_summary:unknown};
 export type Result = {status:number;message:string;approval?:Approval;summary?:unknown};

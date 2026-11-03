@@ -488,7 +488,8 @@
     "updateQueued": "Task update queued",
     "agentmailExplicit": "Select AgentMail explicitly before configuring real mail",
     "noStoredEvent": "No stored HubSpot event in this sample yet",
-    "sandboxLineChanged": "Sandbox line item changed"
+    "sandboxLineChanged": "Sandbox line item changed",
+    "simulatedProvision": "Simulated, no live connection. Sample data."
   },
   "backendA5": {
     "answered": "Answered from your data",

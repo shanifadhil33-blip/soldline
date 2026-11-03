@@ -1,5 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
+import { loadMessages } from '../../lib/i18n';
+import { sandboxTargetRefused } from '../demo/safety';
 import type { Job } from '../jobs/store';
 import { Retryable } from '../integrations/errors';
 import type { DealWrite } from '../integrations/hubspot';
@@ -25,6 +27,13 @@ async function taskMatches(client:Providers['clickup'],list:string,ref:string) {
   return matches[0];
 }
 async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:string,reconcileOnly=false,memberName:MemberName=async()=>null):Promise<void> {
+  if(e.action!=='reverse' && (e.system==='clickup' || e.system==='hubspot') && await store.providerMode(e.workspace_id,e.system)==='simulated') {
+    const label=loadMessages('en').backendA4.simulatedProvision;
+    await store.set(e,'succeeded',{simulated:true,label});
+    await store.event(e,'provision_simulated');
+    return;
+  }
+  if(await store.isDemo(e.workspace_id) && e.system==='clickup' && sandboxTargetRefused(e.target_ref)) throw new Error('Sandbox target refused');
   const record=e.request.records[0];const fields=record?after(record):{};
   const uncertain=['unknown','in_flight'].includes(e.state);
   if(e.action==='reverse') {
@@ -100,19 +109,33 @@ async function apply(store:ExecutorStore,providers:Providers,e:Effect,runRef:str
   }
   if(e.system==='hubspot' && e.action==='patch_deal_properties') {
     const values=z.object({soldline_delivery_status:z.string().optional(),soldline_plan_url:z.string().optional(),soldline_run_ref:z.string().optional()}).strict().parse(fields);
-    const current=await providers.hubspot.getDeal(e.target_ref);
+    let target=e.target_ref;
+    if(await store.isDemo(e.workspace_id) && sandboxTargetRefused(target)) {
+      const saved=typeof e.result?.sandboxDealId==='string'?e.result.sandboxDealId:'';
+      if(saved && !sandboxTargetRefused(saved)) target=saved;
+      else {
+        const created=await providers.hubspot.createDemoDeal('Harbor Coffee Roasters '+e.workspace_id);
+        if(sandboxTargetRefused(created.id)) throw new Error('Sandbox deal refused');
+        target=created.id;
+        await store.observe(e,{...(e.result??{}),sandboxDealId:target});
+        await store.rememberSandboxDeal(e.workspace_id,e.run_id,target,created.properties.dealstage??'appointmentscheduled');
+      }
+    }
+    if(await store.isDemo(e.workspace_id) && sandboxTargetRefused(target)) throw new Error('Sandbox deal refused');
+    const current=await providers.hubspot.getDeal(target);
     if(uncertain && e.result?.before) {
-      if(Object.entries(values).every(([k,v])=>current.properties[k]===v)) {await store.set(e,'succeeded',e.result,e.target_ref);return;}
+      if(Object.entries(values).every(([k,v])=>current.properties[k]===v)) {await store.set(e,'succeeded',e.result,target);return;}
       const before=e.result.before as Record<string,string|null>;
       if(Object.entries(before).some(([k,v])=>(current.properties[k]??null)!==v)) throw new Error('The deal changed while delivery was uncertain');
     }
     if(reconcileOnly) throw new Error('The deal needs an explicit retry');
     const before=(e.result?.before??Object.fromEntries(Object.keys(values).map(k=>[k,current.properties[k]??null]))) as Record<string,string|null>;
-    const observation={before,after:values};
+    const observation={before,after:values,sandboxDealId:target};
     await store.observe(e,observation);await store.set(e,'in_flight');
     const expected=Object.fromEntries(Object.keys(values).map(k=>[k,current.properties[k]??null]));
-    await providers.hubspot.patchDealProperties(e.target_ref,values,{modifiedAt:current.properties.hs_lastmodifieddate!,properties:expected});
-    await store.set(e,'succeeded',observation,e.target_ref);return;
+    if(await store.isDemo(e.workspace_id)) await store.rememberSandboxDeal(e.workspace_id,e.run_id,target,current.properties.dealstage??'appointmentscheduled');
+    await providers.hubspot.patchDealProperties(target,values,{modifiedAt:current.properties.hs_lastmodifieddate!,properties:expected});
+    await store.set(e,'succeeded',{...observation,sandboxDealId:target},target);return;
   }
   if(e.system==='mail' && e.action==='send_message') {
     const message=e.request.message;
