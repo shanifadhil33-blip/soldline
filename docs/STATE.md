@@ -189,3 +189,9 @@ P14a verification: Node v22.23.3, pnpm gate EXIT=0, all 645 tests across 43 file
 ## P14b
 
 P14b adds member private agent conversations and approval only action cards, personal and company settings, revocable hashed member MCP tokens with JSON RPC tools and per token limits, and database feedback attachments. Free AI wording has member and sandbox daily caps with deterministic data fallback. Small organisation notes activate immediately; consequential lessons require Agency director review. Forget clears personal memory and conversations while preserving organisation memory and audit. Migration 0013_agent_backend.sql is required before deployment. Backend and tests only, with no new screens or visual changes. The final pnpm gate exits 0 with all 670 tests and the production build passing. See docs/P14b.md for verification and limits.
+
+## P15a
+
+A fresh demo sandbox seeds the Harbor provision approval with provisionPayload and the same hash fields the approvals store writes. The input is the current scope version, so Approve can pass the live comparison without a hand built row. The sample client email stays on the sample inbox and is still labelled not sent.
+
+With ClickUp and HubSpot tokens, execution creates the folder in the Soldline Demo space and a sandbox HubSpot deal, records both for cleanup, and refuses the protected deal 355638664953 and any sample id. With no token for that provider, the effect finishes as "Simulated, no live connection. Sample data." with an audit row. A second Approve does not create another folder, and a failed task create retries onto the same folder. No new route. See docs/P15a.md.

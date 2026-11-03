@@ -4,7 +4,6 @@ import type { TransactionDriver } from '@/server/db/withMember';
 import type { ownerServices } from '@/server/db/owner';
 import type { Member } from '@/server/permissions';
 import { hash } from '@/server/approvals/model';
-import { provisionPayload } from '@/server/executor/provision';
 import { encryptToken } from '@/server/crypto';
 import { scopeTitles } from '@/server/demo/seed';
 type Row=Record<string,unknown>&{id:string;name:string;parent:string;date_updated:string};
@@ -41,8 +40,7 @@ export async function prepareCore(owner:TransactionDriver,services:ReturnType<ty
     const plan={tasks:scopeTitles.map((title,i)=>({scopeItem:i+1,title,list:['Setup','Content','Ads','Reporting'][Math.floor(i/2)],owner:ravi.id,due:new Date(now.getTime()+86400000*(i+1)).toISOString()}))};
     await db.query('UPDATE runs SET plan=$2,delivery_lead_id=$3,won_at=$4 WHERE id=$1',[run.id,JSON.stringify(plan),imran.id,won]);
     await db.query("UPDATE onboarding_inputs SET requested_at=now()-interval '4 days' WHERE run_id=$1",[run.id]);
-    // Replace the seeded display approvals with the executable fixture approvals created below.
-    await db.query('DELETE FROM approvals WHERE run_id=$1',[run.id]);
+    // The seeded Harbor provision approval is already executable. Keep it and the sample email.
     await db.query('DELETE FROM findings WHERE run_id=$1',[run.id]);
     for(const title of [scopeTitles[0],scopeTitles[1],scopeTitles[5],scopeTitles[6]])await db.query("INSERT INTO findings(workspace_id,run_id,kind,severity,status,title,owner_member_id,evidence) VALUES($1,$2,'scope_mismatch','block','open',$3,$4,$5)",[ws,run.id,`No HubSpot line item for ${title}.`,ravi.id,JSON.stringify([{source:'Signed scope page 2',quote:title,record_ref:'No matching line item',rule:'sold_not_in_crm'}])]);
     await db.query("INSERT INTO findings(workspace_id,run_id,kind,severity,status,title,evidence) VALUES($1,$2,'missing_input','warn','open','No Meta ad account access yet.',$3)",[ws,run.id,JSON.stringify([{source:'Client inputs',quote:'Meta ad account access not received',record_ref:'Meta ad account access',rule:'missing_input'}])]);
@@ -54,10 +52,7 @@ export async function prepareCore(owner:TransactionDriver,services:ReturnType<ty
     return {run,scope,omar,imran,plan};
   });
   if(!setup)return;
-  const {run,scope,omar,imran,plan}=setup;
-  const payload=provisionPayload({spaceId:'sample',folderName:'Harbor Coffee Roasters',dealId:run.hubspot_deal_id,runRef:run.id.replaceAll('-',''),planUrl:'https://example.test/plan',tasks:plan.tasks.map((t,i)=>({key:String(i+1),name:t.title,list:t.list,assignees:[42],due_date:Date.parse(t.due)})),missingLineItems:4,ownerMemberId:omar.id});
-  const created=await services.approvals.createApproval({runId:run.id,kind:'provision',payload,inputRefs:[{system:'scope',record_id:run.deal_id,version_marker:String(scope.version),hash:hash(scope)}],reversibility:'reversible'},omar);
-  if(created.status!==201)throw new Error('Fixture approval preparation failed');
+  const {run,scope,omar,imran}=setup;
   // A separate exact approval exercises the real live input comparison and persisted stale state.
   const stale=await services.approvals.createApproval({runId:run.id,kind:'plan_correction',payload:{effects:[{system:'hubspot',location:run.hubspot_deal_id,action:'patch_deal_properties',records:[{id:run.hubspot_deal_id,fields:{amount:{before:'18000',after:'18000'}}}],amounts:{AED:18000}}]},inputRefs:[{system:'hubspot',record_id:run.hubspot_deal_id,version_marker:'old',hash:hash('old')}],reversibility:'reversible'},omar);
   if(!stale.approval)throw new Error('Fixture stale preparation failed');

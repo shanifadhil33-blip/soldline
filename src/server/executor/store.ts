@@ -8,6 +8,7 @@ import { systemAudit } from '../jobs/store';
 import { z } from 'zod';
 import { after } from './model';
 import { hash, type Approval } from '../approvals/model';
+import { sandboxTargetRefused } from '../demo/safety';
 import { effectKey, type Effect, type ExactEffect } from './model';
 export function executorStore(owner:TransactionDriver) {
   const audit=async(db:Parameters<Parameters<TransactionDriver['transaction']>[0]>[0],ws:string,action:string,id:string,details?:unknown)=>systemAudit(db,ws,'system',action,id,details);
@@ -152,6 +153,24 @@ export function executorStore(owner:TransactionDriver) {
         return result;
       });
     },
+    async providerMode(ws:string,system:string):Promise<'live'|'simulated'> {
+      return owner.transaction(async db=>{
+        const demo=(await db.query<{is_demo:boolean}>('SELECT coalesce(is_demo,false) AS is_demo FROM workspaces WHERE id=$1',[ws])).rows[0];
+        if(!demo?.is_demo || !['clickup','hubspot'].includes(system)) return 'live';
+        const row=(await db.query<{token_ciphertext:string|null}>('SELECT token_ciphertext FROM connections WHERE workspace_id=$1 AND provider=$2',[ws,system])).rows[0];
+        return row?.token_ciphertext?'live':'simulated';
+      });
+    },
+    async isDemo(ws:string) {
+      return owner.transaction(async db=>!!(await db.query('SELECT id FROM workspaces WHERE id=$1 AND is_demo',[ws])).rows[0]);
+    },
+    async rememberSandboxDeal(ws:string,runId:string,externalId:string,dealstage:string) {
+      if(sandboxTargetRefused(externalId)) throw new Error('Sandbox deal refused');
+      return owner.transaction(async db=>{
+        await db.query(`INSERT INTO demo_resources(workspace_id,provider,external_id,seed_state) VALUES($1,'hubspot',$2,$3) ON CONFLICT DO NOTHING`,[ws,externalId,JSON.stringify({dealstage})]);
+        await db.query(`UPDATE deals SET hubspot_deal_id=$3,snapshot=coalesce(snapshot,'{}'::jsonb)||jsonb_build_object('demo_sandbox',$1::text) FROM runs r WHERE deals.workspace_id=$1 AND r.workspace_id=$1 AND r.id=$2 AND deals.id=r.deal_id`,[ws,runId,externalId]);
+      });
+    },
     async complete(job:Job) {
       return owner.transaction(async db=>{
         const pending=(await db.query("SELECT id FROM external_effects WHERE workspace_id=$1 AND approval_id=$2 AND state NOT IN ('succeeded','compensated')",[job.workspace_id,job.payload.approvalId])).rows.length;
@@ -166,7 +185,9 @@ export function executorStore(owner:TransactionDriver) {
             const accepted=await db.query<{id:string}>(`UPDATE scope_versions v SET status='accepted',accepted_by=$3,accepted_at=now() FROM runs r WHERE r.workspace_id=$1 AND r.id=$2 AND v.workspace_id=r.workspace_id AND v.id=r.scope_version_id AND v.version=1 AND v.status='draft' RETURNING v.id`,[job.workspace_id,job.run_id,approval.decided_by]);
             for(const v of accepted.rows) await audit(db,job.workspace_id,'scope_version_accepted',v.id,{approval_id:approval.id});
           }
-          await db.query(`UPDATE approvals SET status='executed',executed_at=now(),execution_summary=execution_summary || jsonb_build_object('message','Delivery completed','completed',true) WHERE workspace_id=$1 AND id=$2`,[job.workspace_id,job.payload.approvalId]);
+          const simulated=(await db.query("SELECT id FROM external_effects WHERE workspace_id=$1 AND approval_id=$2 AND result->>'simulated'='true'",[job.workspace_id,job.payload.approvalId])).rows.length>0;
+          const message=simulated?loadMessages('en').backendA4.simulatedProvision:'Delivery completed';
+          await db.query(`UPDATE approvals SET status='executed',executed_at=now(),execution_summary=execution_summary || jsonb_build_object('message',$3::text,'label',CASE WHEN $4 THEN $3::text ELSE NULL END,'completed',true) WHERE workspace_id=$1 AND id=$2`,[job.workspace_id,job.payload.approvalId,message,simulated]);
           await db.query("UPDATE recovery_items SET status='resolved',resolution_note='Delivery completed' WHERE workspace_id=$1 AND run_id=$2 AND kind IN ('execution_failed','job_failed') AND job_id IN (SELECT id FROM jobs WHERE workspace_id=$1 AND run_id=$2 AND kind='execute_approval_effect') AND status IN ('open','retrying')",[job.workspace_id,job.run_id]);
         }
         await db.query(`UPDATE runs SET status=CASE WHEN EXISTS(SELECT 1 FROM external_effects WHERE workspace_id=$1 AND run_id=$2 AND state NOT IN ('succeeded','compensated')) THEN 'partly_done' ELSE 'ready' END,ready_at=CASE WHEN NOT EXISTS(SELECT 1 FROM external_effects WHERE workspace_id=$1 AND run_id=$2 AND state NOT IN ('succeeded','compensated')) THEN coalesce(ready_at,now()) ELSE NULL END WHERE workspace_id=$1 AND id=$2 AND status NOT IN ('paused','cancelled')`,[job.workspace_id,job.run_id]);

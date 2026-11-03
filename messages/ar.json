@@ -488,7 +488,8 @@
     "updateQueued": "تمت جدولة تحديث المهمة",
     "agentmailExplicit": "اختر AgentMail صراحة قبل إعداد البريد الحقيقي",
     "noStoredEvent": "لا يوجد حدث HubSpot محفوظ في هذه العينة بعد",
-    "sandboxLineChanged": "تم تغيير بند الصفقة التجريبية"
+    "sandboxLineChanged": "تم تغيير بند الصفقة التجريبية",
+    "simulatedProvision": "محاكاة، بلا اتصال مباشر. بيانات نموذجية."
   },
   "backendA5": {
     "answered": "تمت الإجابة من بياناتك",
