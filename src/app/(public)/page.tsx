@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getLanguage } from '../../lib/locale';
 import { loadMessages, formatNumber } from '../../lib/i18n';
+import { demoPhrase } from '../../lib/plain';
 import { LanguageLink } from '../../components/language-link';
 import { OpenDemo } from '../../components/open-demo';
 
@@ -27,7 +28,7 @@ export default async function Home() {
         </div>
         <div>
           <h2>{m.landing.planHeading}</h2>
-          <ol>{tasks.map(task => <li key={task}>{task}</li>)}</ol>
+          <ol>{tasks.map(task => <li key={task}>{demoPhrase(task, locale)}</li>)}</ol>
           <p>{m.landing.productNote}</p>
         </div>
       </aside>

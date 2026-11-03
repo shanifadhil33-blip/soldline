@@ -1,11 +1,12 @@
 'use client';
 import { useCallback,useEffect,useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { loadMessages,type Language } from '../lib/i18n';
 import { demoPhrase, personName } from '../lib/plain';
 import type { Approval } from '../server/approvals/model';
 import { demoPeople } from '../lib/demo-personas';
 import { BackendCheck } from './trust-screens';
+import { ProjectGone } from './project-gone';
+import { DetailSkeleton } from './skeletons';
 import { ApprovalCard } from './approval-card';
 type Finding={id:string;title:string;evidence:Record<string,unknown>|Record<string,unknown>[]|null};
 type Detail={run:{id:string;status:string;plan:{tasks?:{title:string;owner:string;due:string}[]}|null};title:string;findings:Finding[];inputs:{id:string;label:string;status:string}[];items:{key:string;title:string;source_quote:string}[];approvals:Approval[];history:{id:string;at:string;action:string;actor_name_at_event:string;outcome:string}[];members:{id:string;display_name:string;clickup_user_id:string|null}[];isDemo:boolean};
@@ -14,20 +15,20 @@ const tabs=['plan','inputs','findings','clickup','emails','history'] as const;
 type Tab=typeof tabs[number];
 export function RunDetail({id,locale,initialTab='plan'}:{id:string;locale:Language;initialTab?:Tab}) {
   const m=loadMessages(locale).screens;
-  const router=useRouter();
-  const [data,setData]=useState<Detail|null>(null),[tab,setTab]=useState<Tab>(initialTab),[error,setError]=useState(''),[replay,setReplay]=useState(''),[busy,setBusy]=useState(false),[tasks,setTasks]=useState<Tasks|null>(null);
+    const [gone,setGone]=useState(false),[data,setData]=useState<Detail|null>(null),[tab,setTab]=useState<Tab>(initialTab),[error,setError]=useState(''),[replay,setReplay]=useState(''),[busy,setBusy]=useState(false),[tasks,setTasks]=useState<Tasks|null>(null);
   const refresh=useCallback(async()=>{
     const response=await fetch(`/api/runs/${id}`,{cache:'no-store'});
-    if(response.status===404){router.replace('/runs');return;}
+    if(response.status===404){setGone(true);return;}
     if(!response.ok)throw new Error();
     setData(localizeDetail(await response.json(),locale));
-  },[id,locale,router]);
-  useEffect(()=>{let active=true;void fetch(`/api/runs/${id}`,{cache:'no-store'}).then(async response=>{if(response.status===404){router.replace('/runs');return;}if(!response.ok)throw new Error();const body=await response.json();if(active)setData(localizeDetail(body,locale));}).catch(()=>{if(active)setError(m.error);});const timer=setInterval(()=>{void refresh().catch(()=>setError(m.error));},5000);return ()=>{active=false;clearInterval(timer);};},[id,locale,refresh,m.error,router]);
+  },[id,locale]);
+  useEffect(()=>{let active=true;void fetch(`/api/runs/${id}`,{cache:'no-store'}).then(async response=>{if(response.status===404){if(active)setGone(true);return;}if(!response.ok)throw new Error();const body=await response.json();if(active)setData(localizeDetail(body,locale));}).catch(()=>{if(active)setError(m.error);});const timer=setInterval(()=>{void refresh().catch(()=>setError(m.error));},5000);return ()=>{active=false;clearInterval(timer);};},[id,locale,refresh,m.error]);
   useEffect(()=>{if(tab!=='clickup')return;let active=true;void fetch(`/api/runs/${id}/tasks`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error();const body=await r.json();if(active)setTasks(body);}).catch(()=>{if(active)setError(m.error);});return ()=>{active=false;};},[tab,id,m.error]);
   function select(value:Tab) {setError('');setTasks(null);setTab(value);const url=new URL(location.href);url.searchParams.set('tab',value);history.replaceState(null,'',url);}
   const date=(value:string)=>new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
   async function runReplay() {setBusy(true);try {const r=await fetch(`/api/runs/${id}/replay`,{method:'POST'});const body=await r.json();setReplay(body.message);await refresh();}catch{setError(m.error);}finally{setBusy(false);}}
-  if(!data)return <p role="status">{error||m.loading}</p>;
+  if(gone)return <ProjectGone locale={locale}/>;
+  if(!data)return error?<p role="alert">{error}</p>:<DetailSkeleton/>;
   const phrase=(value:string)=>demoPhrase(value,locale);
   const evidenceText=(finding:Finding,key:'source'|'quote'|'current'|'rule')=>{
     const raw=showEvidence(finding.evidence,key,'');
