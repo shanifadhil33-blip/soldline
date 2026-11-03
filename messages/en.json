@@ -1,18 +1,25 @@
 {
   "landing": {
-    "headline": "Every deliverable you sell gets an owner, a deadline and an approval.",
-    "subline": "Soldline reads the signed scope when a HubSpot deal is won, checks it against what was entered, and sets up the work in ClickUp only after the right person approves the exact change.",
+    "headline": "Sold work, ready to deliver.",
+    "accentWord": "ready",
+    "subline": "The deal is won. Half of what was sold never reaches the team. Soldline reads the signed scope, finds the gaps, and waits for the right person to approve the plan.",
     "demo": "Try the demo",
+    "openDemo": "Open the demo",
+    "openHint": "Starts as Imran Shaikh, delivery lead. No sign up.",
+    "productTitle": "Harbor Coffee Roasters",
+    "soldHeading": "What was sold",
+    "planHeading": "The plan",
+    "productNote": "8 tasks waiting for Imran",
     "signIn": "Sign in",
     "sections": [
-      "Catches what sales and delivery disagree on",
-      "Nothing changes without an exact approval",
-      "Safe when systems fail"
+      "Catches what was sold but never handed over",
+      "The right person approves the exact plan",
+      "Work stays safe when a system is down"
     ],
     "details": [
-      "See what was promised beside what was entered. Give each difference an owner before delivery starts.",
-      "Review the owner, deadline and exact change together. The right person decides before Soldline acts.",
-      "Keep completed work. See what needs attention and choose when to try again."
+      "See the signed promise beside the deal. Each gap has an owner before delivery starts.",
+      "Read the owner, the date and the exact change. The right person decides before Soldline acts.",
+      "Keep finished work. See what needs attention and choose when to try again."
     ],
     "stack": "Next.js, Postgres, HubSpot, ClickUp, team inbox",
     "preview": "From signed scope to owned work",
@@ -35,9 +42,10 @@
   },
   "nav": {
     "today": "Today",
-    "runs": "Runs",
-    "recovery": "Recovery",
-    "audit": "Audit log",
+    "runs": "Projects",
+    "recovery": "Fixes",
+    "audit": "History",
+    "needs": "Needs you",
     "connections": "Connections",
     "templates": "Templates",
     "team": "Team",
@@ -61,7 +69,7 @@
   },
   "demo": {
     "title": "Choose your view",
-    "intro": "See the same handover through the people responsible for it.",
+    "intro": "Open the same handover as the person responsible for it. No sign up.",
     "fictional": "Northlight Studio, Harbor Coffee Roasters and Cedar Line Furniture are fictional.",
     "choose": "Choose a person to start.",
     "creating": "Creating your demo",
@@ -84,15 +92,31 @@
       "laith": "Laith Saeed"
     }
   },
+  "preferences": {
+    "name": "What should we call you",
+    "language": "Language",
+    "digest": "Morning note time",
+    "replyName": "Name on replies",
+    "save": "Save",
+    "saved": "Saved",
+    "feedback": "Tell us what to improve",
+    "feedbackHint": "Your note",
+    "feedbackSend": "Send note",
+    "english": "English",
+    "arabic": "Arabic"
+  },
   "empty": {
     "title": "Coming next",
     "body": "This page is being prepared. Choose another page to explore the workspace."
   },
   "screens": {
-    "needsAction": "Needs action for me",
+    "needsAction": "Needs you",
+    "ask": "Ask about this work",
+    "askHint": "Your question",
+    "askSend": "Send",
     "waiting": "Approvals waiting",
-    "blocked": "Blocked runs",
-    "recovery": "Recovery items",
+    "blocked": "Needs fixing first",
+    "recovery": "Fixes",
     "oldInputs": "Old missing inputs",
     "allClear": "Nothing waiting here",
     "metrics": [
@@ -116,7 +140,7 @@
     "apply": "Apply",
     "none": "Not available",
     "unassigned": "No owner",
-    "noRuns": "No runs yet",
+    "noRuns": "No projects yet",
     "approval": "Approval",
     "timeline": "Timeline",
     "findings": "Findings",
@@ -256,7 +280,7 @@
     "empty": "Nothing waiting here",
     "saved": "Saved",
     "refused": "Soldline refused this request",
-    "recovery": "Recovery",
+    "recovery": "Fixes",
     "note": "Resolution note",
     "noteRequired": "Write a note before resolving this item",
     "choose": "Choose an item",
@@ -270,7 +294,7 @@
       "cancel_remaining": "Cancel remaining",
       "reconcile": "Reconcile"
     },
-    "audit": "Audit log",
+    "audit": "History",
     "chainOk": "Audit chain checked: unbroken",
     "chainBroken": "Audit chain broken at entry {id}",
     "actor": "Actor",
@@ -493,10 +517,10 @@
   },
   "backendA5": {
     "answered": "Answered from your data",
-    "runs": "Runs",
+    "runs": "Projects",
     "findings": "Findings",
     "approvals": "Approvals",
-    "recovery": "Recovery items",
+    "recovery": "Fixes",
     "inputs": "Inputs",
     "tasks": "Tasks",
     "saved": "Saved",

@@ -1,15 +1,17 @@
 :root {
-  --background: #FAF8F4;
-  --surface: #F2EFE8;
-  --text: #281A0D;
-  --text-secondary: #614F38;
-  --accent: #416C6F;
+  --background: #FFFFFF;
+  --surface: #FFFFFF;
+  --text: #1D1B18;
+  --text-secondary: #5C564E;
+  --accent: #1D1B18;
   --accent-ink: #FFFFFF;
-  --border: #D9D9D9;
-  --border-structure: #B28C62;
+  --clay: #C8845B;
+  --border: #E7E2DA;
+  --border-structure: #E7E2DA;
+  --shadow: 0 12px 32px rgb(29 27 24 / 8%);
   --border-width: 1px;
-  --radius-6: 6px;
-  --radius-8: 8px;
+  --radius-6: 999px;
+  --radius-8: 20px;
   --space-4: 4px;
   --space-8: 8px;
   --space-12: 12px;
@@ -26,8 +28,9 @@
   --color-accent-ink: var(--accent-ink);
   --color-border: var(--border);
   --color-structure: var(--border-structure);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plex);
   --font-arabic: var(--font-plex-arabic);
+  --color-clay: var(--clay);
   --radius-sm: var(--radius-6);
   --radius-md: var(--radius-8);
   --spacing: var(--space-4);

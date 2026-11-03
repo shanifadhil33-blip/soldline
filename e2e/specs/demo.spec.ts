@@ -11,7 +11,7 @@ for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Cor
   await page.getByRole('button',{name:new RegExp(m.demo.people.imran)}).click();
   await page.getByRole('link',{name:m.demo.open}).click();
   await expect(page.getByRole('heading',{name:s.needsAction})).toBeVisible();
-  await expect(page.locator('.metric-strip')).toBeVisible();
+  await expect(page.locator('.metric-strip')).toHaveCount(0);
   await page.goto('/runs');
   await page.getByRole('combobox',{name:s.sort,exact:true}).selectOption('client');
   await page.getByRole('combobox',{name:s.order,exact:true}).selectOption('asc');
@@ -51,7 +51,7 @@ for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Cor
   for(const tab of ['inputs','findings','emails','history','plan'] as const){
     await page.getByRole('button',{name:s.tabs[tab],exact:true}).click();
     await expect(page).toHaveURL(new RegExp(`tab=${tab}`));
-    if(tab==='emails'){await expect(page.getByText('Hello Karim. Please share Meta account access before launch. Thank you, Omar.',{exact:true})).toBeVisible();await expect(page.getByText(s.reversibility.irreversible,{exact:true})).toBeVisible();}
+    if(tab==='emails'){const email=page.locator('.approval-card',{hasText:'Hello Karim. Please share Meta account access before launch. Thank you, Omar.'});await expect(email).toBeVisible();await expect(email.getByText(s.reversibility.irreversible,{exact:true})).toBeVisible();}
     await expect.poll(()=>page.evaluate(()=>({document:document.documentElement.scrollWidth,body:document.body.scrollWidth,viewport:innerWidth}))).toEqual({document:width,body:width,viewport:width});
   }
   expect(errors).toEqual([]);
