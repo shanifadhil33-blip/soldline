@@ -19,6 +19,7 @@ import { verifyChain } from '../audit';
 import type { SqlConnection, TransactionDriver } from './withMember';
 import { authTables } from './authSchema';
 import { demoStore } from '../demo/store';
+import { runHistory } from '../run-history';
 
 function adapterFor(db: SqlConnection, workspace: string): Adapter {
   const client = drizzle(async (sql, params) => {
@@ -67,7 +68,7 @@ export function ownerServices(owner: TransactionDriver) {
     deleteSession: token => owner.transaction(async db => { await db.query('DELETE FROM sessions s USING workspaces w WHERE w.id=s.workspace_id AND coalesce(w.is_demo,false)=false AND session_token=$1', [token]); }),
   };
   return {
-    agent: agentOwner(owner), demoControls: demoControls(owner), trust: trustStore(owner), readRunTasks: runTaskReader(owner), monitors: monitorStore(owner), memory: memoryStore(owner), recovery: recoveryStore(owner), approvals: approvalStore(owner), scope: scopeStore(owner), demo: demoStore(owner), authAdapter, jobs: jobStore(owner), providers: systemProviders(owner),
+    agent: agentOwner(owner), demoControls: demoControls(owner), trust: trustStore(owner), readRunTasks: runTaskReader(owner), readRunHistory: runHistory(owner), monitors: monitorStore(owner), memory: memoryStore(owner), recovery: recoveryStore(owner), approvals: approvalStore(owner), scope: scopeStore(owner), demo: demoStore(owner), authAdapter, jobs: jobStore(owner), providers: systemProviders(owner),
     async auditRun(member:Member,runId:string) {
       return owner.transaction(async db=>{
         const actor=(await db.query<Member & Record<string,unknown>>("SELECT m.*,w.is_demo FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE m.workspace_id=$1 AND m.id=$2 AND m.archived_at IS NULL AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())",[member.workspace_id,member.id])).rows[0];
