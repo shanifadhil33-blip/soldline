@@ -2,6 +2,7 @@ import { getMember } from '../../../../server/session';
 import { getAppDriver,getOwnerServices } from '../../../../server/db/runtime';
 import { withMember } from '../../../../server/db/withMember';
 import { withMemberRoute, answer, fail } from '../../../../server/http';
+import { clearDemoWorkspace } from '../../../../server/demo/read-cache';
 import { assertCan } from '../../../../server/permissions';
 export const GET=withMemberRoute(async (_request,context,member,db)=>{
   const {id}=await context.params;
@@ -14,6 +15,7 @@ export const GET=withMemberRoute(async (_request,context,member,db)=>{
 
 export async function POST(request:Request,context:{params:Promise<Record<string,string>>}) {
   const member=await getMember(request);if(!member)return fail(401);
+  if(member.is_demo)clearDemoWorkspace(member.workspace_id);
   const {id}=await context.params;
   const visible=await withMember(getAppDriver(),member.id,async db=>(await db.query('SELECT task_id FROM monitor_tasks WHERE task_id=$1',[id])).rows.length>0);
   if(!visible)return fail(404);

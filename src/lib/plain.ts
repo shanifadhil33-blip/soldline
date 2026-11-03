@@ -21,7 +21,14 @@ export function preparePersonalPatch(body: unknown): unknown {
 export function demoPhrase(text: string, locale: Language): string {
   if (!text) return text;
   const table = loadMessages(locale).demo.phrases as Record<string, string>;
-  return table[text] ?? text;
+  if (table[text]) return table[text];
+  if (locale === 'en') return text;
+  return text.split(/(\s*,\s*)/).map(part => table[part] ?? part).join('');
+}
+
+export function statusWord(status: string, locale: Language): string {
+  const key = status.toLowerCase().replaceAll(' ', '_').replaceAll('-', '_') as keyof ReturnType<typeof loadMessages>['screens']['statuses'];
+  return loadMessages(locale).screens.statuses[key] ?? status.replaceAll('_', ' ').replaceAll('-', ' ');
 }
 
 export function personName(value: string | null | undefined, locale: Language): string {

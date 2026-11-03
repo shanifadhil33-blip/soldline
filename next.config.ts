@@ -4,6 +4,9 @@ import path from 'node:path';
 const config: NextConfig = {
   turbopack: {},
   poweredByHeader: false,
+  experimental: {
+    staleTimes: { dynamic: 30, static: 30 },
+  },
   async headers() {
     return [{
       source: '/:path*',

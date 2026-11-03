@@ -6,6 +6,7 @@
     "demo": "Try the demo",
     "openDemo": "Open the demo",
     "openHint": "Starts as Imran Shaikh, delivery lead. No sign up.",
+    "startsAs": "Starts as {name}",
     "productTitle": "Harbor Coffee Roasters",
     "soldHeading": "What was sold",
     "planHeading": "The plan",
@@ -66,7 +67,8 @@
     "workspaceFallback": "My workspace",
     "loading": "Opening the demo",
     "error": "We could not open the demo. Please try again.",
-    "moreLead": "Connections, templates, team and settings"
+    "moreLead": "Connections, templates, team and settings",
+    "account": "Account"
   },
   "demo": {
     "title": "Choose your view",
@@ -77,6 +79,21 @@
     "ready": "Your demo is ready",
     "error": "We could not start the demo. Please try again.",
     "open": "Open workspace",
+    "seeNeeds": "See what needs you",
+    "hello": "Hello {name}",
+    "opening": "Opening your sample",
+    "welcomeStaff": "This sample follows one handover. Three taps show the path.",
+    "welcomeReviewer": "This sample is the handover waiting for your review.",
+    "seeHandover": "See the handover",
+    "stepsStaff": ["See what needs you", "Open the Harbor project", "Read the history"],
+    "stepsReviewer": ["See the handover", "Check what is still missing", "Send the items we need"],
+    "guide": "A short path",
+    "guideStep": "Step {n} of {total}",
+    "tourNext": "Next",
+    "tourDone": "Got it",
+    "tourSkip": "Skip",
+    "tourStaff": ["This button opens the work waiting for you.", "Projects is where Harbor Coffee Roasters lives.", "History keeps every change in this sample."],
+    "tourReviewer": ["This button opens the handover.", "Home shows the work in review.", "Inputs lists what is still missing."],
     "roles": {
       "admin": "Agency director",
       "account_manager": "Account manager",
@@ -153,8 +170,8 @@
     "arabic": "Arabic"
   },
   "empty": {
-    "title": "Coming next",
-    "body": "This page is being prepared. Choose another page to explore the workspace."
+    "title": "Nothing else here",
+    "body": "Choose another page from the menu."
   },
   "screens": {
     "needsAction": "Needs you",
@@ -162,6 +179,9 @@
     "ask": "Ask about this work",
     "askHint": "Your question",
     "askSend": "Send",
+    "agent": "Agent",
+    "yes": "Yes",
+    "reviewPlan": "Review plan",
     "waiting": "Approvals waiting",
     "blocked": "Needs fixing first",
     "recovery": "Fixes",
@@ -258,6 +278,8 @@
       "blocked": "Blocked",
       "waiting_approval": "Waiting for approval",
       "not_started": "Not started",
+      "in_progress": "In progress",
+      "client_review": "In review",
       "executing": "Setting up",
       "partly_done": "Partly done",
       "ready": "Ready",
@@ -407,9 +429,9 @@
     "approved": "Approved",
     "received": "Received",
     "missing": "Missing",
-    "notFound": "Record not found",
-    "notFoundBody": "Soldline could not find this page",
-    "homeLink": "Open Home",
+    "notFound": "We couldn't find that page",
+    "notFoundBody": "This sample was reset, or the page is not in this view.",
+    "homeLink": "Go to Today",
     "controls": "Demo controls",
     "backend": "Backend check",
     "tryRavi": "Try approving as Ravi",

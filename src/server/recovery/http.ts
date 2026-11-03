@@ -7,9 +7,11 @@ import { withMember } from '../db/withMember';
 import { append } from '../audit';
 import { ForbiddenError, type assertCan } from '../permissions';
 import { actionSchema } from './store';
+import { clearDemoWorkspace } from '../demo/read-cache';
 export async function recoveryRoute(request:Request,context:RouteContext,operation:'action'|'pause'|'cancel'|'undo',guard:typeof assertCan) {
   const member=await getMember(request);
   if(!member) return Response.json({message:'Please sign in or try the demo.'},{status:401});
+  if(member.is_demo) clearDemoWorkspace(member.workspace_id);
   const {id}=await context.params;
   if(!z.uuid().safeParse(id).success) return Response.json({message:'Record not found'},{status:404});
   const access=await withMember(getAppDriver(),member.id,async db=>{

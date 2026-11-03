@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useCallback,useEffect,useState } from 'react';
 import { loadMessages,type Language } from '../lib/i18n';
-import { demoPhrase, personName } from '../lib/plain';
+import { demoPhrase, personName, statusWord } from '../lib/plain';
 type Copy=ReturnType<typeof loadMessages>['trust'];
 function useRead<T>(url:string|null) {
   const [data,setData]=useState<T|null>(null),[failed,setFailed]=useState(false),[refused,setRefused]=useState(false);
@@ -65,14 +65,15 @@ export function ConnectionsScreen({locale}:{locale:Language}) {
   </section>;
 }
 type ClientData={runs:{id:string;name:string}[];inputs:{id:string;run_id:string;label:string;status:string}[];deliverables:{id:string;run_id:string;title:string;status:string}[]};
+function clientRunName(runs:ClientData['runs'],id:string,locale:Language){return demoPhrase(runs.find(run=>run.id===id)?.name??'',locale);}
 export function ClientScreen({locale,inputsOnly=false}:{locale:Language;inputsOnly?:boolean}) {
   const m=loadMessages(locale).trust;const {data,failed,read}=useRead<ClientData>('/api/client');
   const [busy,setBusy]=useState(false),[error,setError]=useState(false),[feedback,setFeedback]=useState('');
   const [retryAction,setRetryAction]=useState<(()=>void)|null>(null);
   async function act(url:string,body?:unknown){setRetryAction(()=>()=>void act(url,body));setBusy(true);setError(false);try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body??{})});if(!response.ok)throw new Error();setFeedback(m.saved);await read();}catch{setError(true);}finally{setBusy(false);}}
   return <section className="screen"><h1>{inputsOnly?m.inputs:m.home}</h1>{failed&&<ErrorState m={m} retry={read}/>} {!data&&!failed&&<p role="status">{m.loading}</p>}{feedback&&<p role="status">{feedback}</p>}{error&&<ErrorState m={m} retry={()=>retryAction?.()}/>}{data&&<>
-    {!inputsOnly&&<section><h2>{m.deliverables}</h2>{data.deliverables.map(d=><article className="trust-card" key={d.id}><h3><Link href={`/deliverables/${encodeURIComponent(d.id)}`}>{d.title||m.deliverables}</Link></h3><p>{data.runs.find(r=>r.id===d.run_id)?.name}</p><p>{d.status.toLowerCase()==='client review'?m.review:d.status==='approved'?m.approved:d.status.replaceAll('_',' ').replaceAll('-',' ')}</p>{d.status.toLowerCase()==='client review'&&<button className="button" disabled={busy} onClick={()=>act(`/api/deliverables/${encodeURIComponent(d.id)}`)}>{m.approve}</button>}</article>)}{!data.deliverables.length&&<p>{m.empty}</p>}</section>}
-    <section><h2>{m.inputs}</h2>{data.inputs.map(i=><article className="trust-card" key={i.id}><h3>{i.label||m.inputs}</h3><p>{data.runs.find(r=>r.id===i.run_id)?.name}</p><p>{i.status==='received'?m.received:m.missing}</p>{i.status!=='received'&&<button className="button" disabled={busy} onClick={()=>act(`/api/inputs/${i.id}`,{confirm:true})}>{m.confirmInput}</button>}</article>)}{!data.inputs.length&&<p>{m.empty}</p>}</section>
+    {!inputsOnly&&<section><h2>{m.deliverables}</h2><ul className="record-list">{data.deliverables.map(d=><li key={d.id}><Link href={`/deliverables/${encodeURIComponent(d.id)}`}><strong>{demoPhrase(d.title,locale)||m.deliverables}</strong><span>{clientRunName(data.runs,d.run_id,locale)}</span></Link><span className="status-chip">{d.status==='approved'?m.approved:d.status.toLowerCase()==='client review'?m.review:statusWord(d.status,locale)}</span>{d.status.toLowerCase()==='client review'&&<button className="button" disabled={busy} onClick={()=>act(`/api/deliverables/${encodeURIComponent(d.id)}`)}>{m.approve}</button>}</li>)}</ul>{!data.deliverables.length&&<p>{m.empty}</p>}</section>}
+    <section><h2>{m.inputs}</h2><ul className="record-list">{data.inputs.map(i=><li key={i.id}><div><strong>{demoPhrase(i.label,locale)||m.inputs}</strong><span>{clientRunName(data.runs,i.run_id,locale)}</span></div><span className="status-chip">{i.status==='received'?m.received:m.missing}</span>{i.status!=='received'&&<button className="button" disabled={busy} onClick={()=>act(`/api/inputs/${i.id}`,{confirm:true})}>{m.confirmInput}</button>}</li>)}</ul>{!data.inputs.length&&<p>{m.empty}</p>}</section>
   </>}</section>;
 }
 export function BackendCheck({id,locale}:{id:string;locale:Language}) {

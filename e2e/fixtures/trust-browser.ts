@@ -6,8 +6,8 @@ export async function begin(page:Page,width:number,locale:'en'|'ar',persona:'imr
   await page.setViewportSize({width,height:900});
   await page.goto(`/demo?lang=${locale}`);
   await page.getByRole('button',{name:new RegExp(copy.demo.people[persona])}).click();
-  await expect(page.getByRole('status')).toContainText(copy.demo.ready);
-  await page.getByRole('link',{name:copy.demo.open}).click();
+  await page.waitForURL(/\/welcome/);
+  await page.getByRole('link',{name:persona==='laith'?copy.demo.seeHandover:copy.demo.open}).click();
   return copy;
 }
 export async function fits(page:Page,width:number) {
