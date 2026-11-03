@@ -16,7 +16,7 @@ for(const width of [360,390,1440])for(const locale of ['en','ar'] as const)test(
   await expect(page).toHaveURL(/actor=Ravi&action=approve_plan&outcome=denied&run=.+&date=/);
   await page.reload();
   await expect(page.locator('.denied-row')).toHaveCount(1);
-  await expect(page.locator('.audit-rows')).toContainText('Ravi Menon');
+  await expect(page.locator('.audit-rows')).toContainText(locale==='ar'?'رافي مينون':'Ravi Menon');
   await expect(page.getByLabel(t.actor,{exact:true})).toHaveValue('Ravi');
   await fits(page,width);
   await page.route('**/api/audit',route=>route.fulfill({status:503,json:{}}),{times:1});

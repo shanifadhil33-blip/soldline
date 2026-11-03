@@ -18,10 +18,11 @@ for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Cor
   await page.getByRole('button',{name:s.apply,exact:true}).click();
   await expect(page).toHaveURL(/sort=client&direction=asc/);
   await expect(page.locator(width===390?'.runs-phone':'.runs-table')).toBeVisible();
-  await page.locator(width===390?'.runs-phone':'.runs-table').getByRole('link',{name:/Harbor Coffee/}).click();
+  await page.locator(width===390?'.runs-phone':'.runs-table').getByRole('link',{name:locale==='en'?/Harbor Coffee/:/هاربور/}).click();
   await expect(page.getByRole('heading',{name:s.timeline,exact:true})).toBeVisible();
-  await expect(page.locator('.plan-diff').getByText(s.before,{exact:true}).first()).toBeVisible();
-  await expect(page.locator('.plan-diff').getByText(s.after,{exact:true}).first()).toBeVisible();
+  await expect(page.locator('.plan-diff')).toContainText(locale==='en'?'Brand style refresh':'تحديث الهوية');
+  await expect(page.locator('.plan-diff')).not.toContainText('90149400327');
+  await expect(page.locator('.approval-card').first()).not.toContainText('@folder');
   const stale=page.locator('.approval-card').filter({has:page.locator('.stale-notice')});
   await expect(stale.getByRole('alert')).toContainText(locale==='en'?'Out of date: HubSpot deal changed':s.stale.split('{what}')[0]);
   await expect(stale.getByRole('button',{name:s.approve,exact:true})).toBeDisabled();
@@ -32,11 +33,8 @@ for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Cor
   expect((await page.request.post(`/api/approvals/${id}/decide`,{data:{decision:'approve',note:''}})).status()).toBe(409);
   const pending=page.locator('.approval-card').filter({hasNot:page.locator('.stale-notice')});
   await expect(pending.getByText(s.reversibility.reversible,{exact:true})).toBeVisible();
-  await expect(pending.getByText(s.before,{exact:true}).first()).toBeVisible();
-  await expect(pending.getByText(s.after,{exact:true}).first()).toBeVisible();
+  await expect(pending).not.toContainText('@folder');
   await pending.getByRole('button',{name:s.approve,exact:true}).click();
-  await expect(pending.getByRole('button',{name:s.execute,exact:true})).toBeVisible();
-  await pending.getByRole('button',{name:s.execute,exact:true}).click();
   await expect(page.locator('.run-detail > p').first()).toHaveText(s.statuses.ready,{timeout:30000});
   await page.getByRole('button',{name:s.tabs.clickup,exact:true}).click();
   await expect(page.getByRole('heading',{name:s.live})).toBeVisible();

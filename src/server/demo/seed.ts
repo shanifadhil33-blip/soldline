@@ -45,13 +45,13 @@ export async function seedSandbox(db: SqlConnection, ws: string, expiry: Date) {
   await insert('runs', { id: run, deal_id: deal, run_key: `sample_${run}`, status: 'waiting_approval', scope_version_id: version, plan: JSON.stringify({ label: 'Sample data', tasks: harborTasks }), delivery_lead_id: ids.imran, won_at: daysAgo(2) });
   // Two inputs have waited more than 3 days, so the account manager and delivery lead each see an old input.
   for (const [i, label] of inputTitles.entries()) await insert('onboarding_inputs', { run_id: run, key: label.toLowerCase().replaceAll(' ', '_'), label, status: 'missing', requested_at: daysAgo(i < 2 ? 4 : 1) });
-  await insert('findings', { run_id: run, kind: 'scope_mismatch', title: 'Four promised deliverables are missing from the CRM package', owner_member_id: ids.ravi });
+  await insert('findings', { run_id: run, kind: 'scope_mismatch', title: 'Four promised deliverables are missing from the CRM package', owner_member_id: ids.ravi, evidence: JSON.stringify([{ source: 'Signed scope page 2', quote: 'Brand style refresh', record_ref: 'The deal lists 4 of 8 sold items', rule: 'sold_not_in_crm' }]) });
   const cedarDeal = randomUUID();
   await insert('deals', { id: cedarDeal, client_company_id: cedar, hubspot_deal_id: `sample_${cedarDeal}`, name: 'Cedar Line Furniture', owner_member_id: ids.omar });
   const cedarRun = randomUUID();
   await insert('runs', { id: cedarRun, deal_id: cedarDeal, run_key: `sample_${cedarDeal}`, status: 'blocked', plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.imran, won_at: daysAgo(1) });
   for (const label of ['Product photos', 'Showroom opening hours']) await insert('onboarding_inputs', { run_id: cedarRun, key: label.toLowerCase().replaceAll(' ', '_'), label, status: 'missing', requested_at: daysAgo(1) });
-  await insert('findings', { run_id: cedarRun, kind: 'no_owner', severity: 'block', status: 'open', title: 'Showroom launch video has no owner yet', owner_member_id: ids.omar });
+  await insert('findings', { run_id: cedarRun, kind: 'no_owner', severity: 'block', status: 'open', title: 'Showroom launch video has no owner yet', owner_member_id: ids.omar, evidence: JSON.stringify([{ source: 'Signed scope page 2', quote: 'Showroom launch video', record_ref: 'No owner on the deal', rule: 'no_owner' }]) });
   // A finished run gives real won and ready dates and a won to ready time.
   const summit = randomUUID(), summitDeal = randomUUID();
   await insert('client_companies', { id: summit, name: 'Summit Trail Outfitters' });
@@ -90,4 +90,9 @@ async function seedWaitingItems(db: SqlConnection, insert: Insert, c: { ws: stri
   await fix('ravi', c.run, 'Upload the brand style draft again', 'The first upload did not reach ClickUp.');
   await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_brand', scope_item_id: c.scopeItemIds[0], status: 'client review', review_since: c.daysAgo(1), due_at: c.daysAgo(-2), assignee_ids: ['ravi'], observed_at: new Date().toISOString() });
   await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_blog', scope_item_id: c.scopeItemIds[2], status: 'in progress', due_at: c.daysAgo(-1), assignee_ids: ['ravi'], observed_at: new Date().toISOString() });
+  await db.query("SELECT set_config('app.member_id',$1,true)", [c.ids.omar]);
+  await db.query('SELECT audit_append($1,$2::jsonb)', [c.ws, JSON.stringify({ action: 'event_processed', outcome: 'succeeded', target_type: 'run', target_id: c.run })]);
+  await db.query("SELECT set_config('app.member_id',$1,true)", [c.ids.imran]);
+  await db.query('SELECT audit_append($1,$2::jsonb)', [c.ws, JSON.stringify({ action: 'approval_created', outcome: 'succeeded', target_type: 'run', target_id: c.run })]);
+  await db.query("SELECT set_config('app.member_id','',true)");
 }

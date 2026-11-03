@@ -31,7 +31,6 @@ for(const width of [390,1440])test(`Reversible work Undo ${width}`,async({page})
   await page.goto(`/runs/${harbor.id}`);
   const approval=page.locator('.approval-card').filter({hasNot:page.locator('.stale-notice')});
   await approval.getByRole('button',{name:m.screens.approve,exact:true}).click();
-  await approval.getByRole('button',{name:m.screens.execute,exact:true}).click();
   await expect(page.locator('.run-detail > p').first()).toHaveText(m.screens.statuses.ready,{timeout:30000});
   await page.goto('/recovery');
   await page.getByLabel(t.note).fill('Imran checked the delivery');

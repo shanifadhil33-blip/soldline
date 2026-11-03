@@ -1,12 +1,14 @@
 import 'server-only';
 import { z } from 'zod';
 import { loadMessages } from '../lib/i18n';
+import { clockFace } from '../lib/plain';
 import { append } from './audit';
 import { assertCan, type Member } from './permissions';
 import type { SqlConnection } from './db/withMember';
 import { clientRecords } from './trust';
 export const copy = loadMessages('en').backendA5;
-export async function memberCopy(db:SqlConnection, member:Member) {
+export async function memberCopy(db:SqlConnection, member:Member, language?: 'en' | 'ar') {
+  if (language) return loadMessages(language).backendA5;
   const row=(await db.query<{language:string}>('SELECT language FROM members WHERE id=$1',[member.id])).rows[0];
   return loadMessages(row?.language==='ar'?'ar':'en').backendA5;
 }
@@ -27,7 +29,9 @@ export async function settings(db:SqlConnection,m:Member,company:boolean,patch?:
     await db.query(`UPDATE ${company?'workspaces':'members'} SET ${entries.map(([k],i)=>fields[k]+'=$'+(i+2)).join(',')} WHERE id=$1`,[company?m.workspace_id:m.id,...entries.map(([,v])=>v)]);
     await append(db,m.workspace_id,{action:company?'company_settings_updated':'settings_updated',outcome:'succeeded',after:{fields:Object.keys(patch)}});
   }
-  return (await db.query(`SELECT ${Object.entries(fields).map(([k,v])=>v+' AS "'+k+'"').join(',')} FROM ${company?'workspaces':'members'} WHERE id=$1`,[company?m.workspace_id:m.id])).rows[0];
+  const row=(await db.query(`SELECT ${Object.entries(fields).map(([k,v])=>v+' AS "'+k+'"').join(',')} FROM ${company?'workspaces':'members'} WHERE id=$1`,[company?m.workspace_id:m.id])).rows[0];
+  if (row && 'digestTime' in row) row.digestTime = clockFace(row.digestTime) ?? null;
+  return row;
 }
 export async function permittedData(db:SqlConnection,m:Member):Promise<Record<string,Record<string,unknown>[]>> {
   assertCan(m,'see_runs',{workspace_id:m.workspace_id,client_company_id:m.client_company_id,task_member_ids:[m.id]});
