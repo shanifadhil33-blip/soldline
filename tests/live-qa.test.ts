@@ -69,6 +69,9 @@ it('Answers in the active language and shows the seeded plan without a live conn
   expect(answer?.intro).toBe(loadMessages('ar').backendA5.summary);
   expect(answer?.rows.find(row => row.label === loadMessages('ar').backendA5.recovery)?.count).toBe(3);
   const run = (await db.query<{ id: string }>("SELECT r.id FROM runs r JOIN deals d ON d.id=r.deal_id WHERE r.workspace_id=$1 AND d.name LIKE 'Harbor%'", [ticket.sandbox])).rows[0];
+  const history = await runtime.owner.readRunHistory(imran, run.id);
+  expect(history.length).toBeGreaterThan(0);
+  expect(history.some(row => row.actor_name_at_event === 'Omar Haddad')).toBe(true);
   const tasks = await runtime.owner.readRunTasks(imran, run.id);
   expect(tasks?.tasks).toHaveLength(8);
   expect(tasks && 'simulated' in tasks && tasks.simulated).toBe(true);
