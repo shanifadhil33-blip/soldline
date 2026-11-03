@@ -13,9 +13,8 @@ for(const width of [390,1440])for(const locale of ['en','ar'] as const)test(`Cor
   await expect(page.getByRole('heading',{name:s.needsAction})).toBeVisible();
   await expect(page.locator('.metric-strip')).toHaveCount(0);
   await page.goto('/runs');
-  await page.getByRole('combobox',{name:s.sort,exact:true}).selectOption('client');
-  await page.getByRole('combobox',{name:s.order,exact:true}).selectOption('asc');
-  await page.getByRole('button',{name:s.apply,exact:true}).click();
+  await page.getByRole('button',{name:s.columns[0],exact:true}).click();
+  await page.getByRole('button',{name:s.descending,exact:true}).click();
   await expect(page).toHaveURL(/sort=client&direction=asc/);
   await expect(page.locator(width===390?'.runs-phone':'.runs-table')).toBeVisible();
   await page.locator(width===390?'.runs-phone':'.runs-table').getByRole('link',{name:locale==='en'?/Harbor Coffee/:/هاربور/}).click();

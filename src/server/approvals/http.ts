@@ -6,11 +6,13 @@ import { withMember } from '../db/withMember';
 import { append } from '../audit';
 import { ForbiddenError, type assertCan } from '../permissions';
 import type { RouteContext } from '../http';
+import { clearDemoWorkspace } from '../demo/read-cache';
 import { actions, type Approval } from './model';
 const decisionSchema=z.object({decision:z.enum(['approve','reject']),note:z.string().max(10000).default('')}).strict();
 export async function approvalRoute(request:Request,context:RouteContext,operation:'decide'|'confirm'|'execute'|'plan',guard:typeof assertCan) {
   const member=await getMember(request);
   if(!member) return Response.json({message:'Please sign in or try the demo.'},{status:401});
+  if(member.is_demo) clearDemoWorkspace(member.workspace_id);
   const {id}=await context.params;
   if(!z.uuid().safeParse(id).success) return Response.json({message:'Approval not found'},{status:404});
   const lookup=await withMember(getAppDriver(),member.id,async db=>{

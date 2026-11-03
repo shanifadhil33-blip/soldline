@@ -35,9 +35,11 @@ for (const locale of ['en', 'ar'] as const) for (const width of [360, 390, 1440]
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/demo?lang=${locale}`);
     await page.getByRole('button', { name: new RegExp(m.demo.people[persona]) }).click();
-    await expect(page.getByRole('status')).toContainText(m.demo.ready);
-    await page.getByRole('link', { name: m.demo.open }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(m.demo.people[persona]);
     const reviewer = persona === 'karim' || persona === 'laith';
+    for (const step of reviewer ? m.demo.stepsReviewer : m.demo.stepsStaff) await expect(page.locator('.welcome-steps')).toContainText(step);
+    await page.getByRole('link', { name: reviewer ? m.demo.seeHandover : m.demo.open }).click();
     await expect(page).toHaveURL(new RegExp(reviewer ? '/home$' : '/today$'));
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
@@ -97,7 +99,7 @@ test('Demo error allows retry and announces creating and ready', async ({ page }
   release!();
   await expect(page.getByRole('status')).toContainText(en.demo.error);
   await page.getByRole('button', { name: en.common.retry }).click();
-  await expect(page.getByRole('status')).toContainText(en.demo.ready);
+  await expect(page).toHaveURL(/\/welcome$/);
 });
 
 test('Arabic phone tabs open their own pages and the project list shows its link', async ({ page }) => {

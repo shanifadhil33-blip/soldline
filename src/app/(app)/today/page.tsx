@@ -7,7 +7,7 @@ import { demoPhrase } from '../../../lib/plain';
 import { AgentPanel } from '../../../components/agent-panel';
 export default async function Page() {
   const locale=await getLanguage(),m=loadMessages(locale),s=m.screens;
-  const data=await screenData((db,member)=>readToday(db,member));
+  const data=await screenData((db,member)=>readToday(db,member),'today');
   const label=(value:string)=>demoPhrase(value,locale);
   const deal=(id:string,fallback:string)=>{const name=data.runs.find(run=>run.id===id)?.deal;return name?label(name):fallback;};
   const groups=[{title:s.waiting,items:data.approvals.map(a=>({id:a.run_id,label:deal(a.run_id,s.approval)}))},{title:s.blocked,items:data.owned.map(r=>({id:r.id,label:deal(r.id,s.blocked)}))},{title:s.recovery,items:data.recovery.map(r=>({id:r.run_id,label:label(r.title)}))},{title:s.oldInputs,items:data.inputs.map(i=>({id:i.run_id,label:label(i.label)}))}];

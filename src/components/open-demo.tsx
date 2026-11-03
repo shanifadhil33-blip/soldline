@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadMessages, type Language } from '../lib/i18n';
-import { demoHome, startDemo } from '../lib/demo-personas';
+import { startDemo } from '../lib/demo-personas';
 
 export function OpenDemo({ locale }: { locale: Language }) {
   const m = loadMessages(locale);
@@ -14,7 +14,7 @@ export function OpenDemo({ locale }: { locale: Language }) {
     setError(false);
     try {
       await startDemo('imran');
-      router.push(demoHome('imran'));
+      router.push('/welcome');
     } catch {
       setError(true);
     } finally {

@@ -4,6 +4,7 @@ import type { TransactionDriver } from '../db/withMember';
 import type { Member } from '../permissions';
 import { lifetime, type DemoTicket } from './cookie';
 import { seedSandbox, personas, type Persona } from './seed';
+import { clearDemoCaches } from './read-cache';
 /** Owner access is confined to creating and expiring demo workspaces. No caller supplied seed or SQL. */
 export function demoStore(owner: TransactionDriver) {
   return {
@@ -30,6 +31,7 @@ export function demoStore(owner: TransactionDriver) {
         const sandbox = randomUUID();
         const expiry = Math.floor(Date.now() / 1000) + lifetime;
         await seedSandbox(db, sandbox, new Date(expiry * 1000));
+        clearDemoCaches();
         return { sandbox, persona, expiry };
       });
     },
