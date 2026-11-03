@@ -44,7 +44,7 @@ for (const locale of ['en', 'ar'] as const) for (const width of [360, 390, 1440]
     await expect(page.getByText('Northlight Studio', { exact: true })).toBeVisible();
     await expect(page.getByText(m.shell.sample, { exact: true })).toBeVisible();
     const navigation = page.locator(width < 768 ? '.phone-tabs' : '.app-sidebar nav');
-    const visible = reviewer ? ['home', 'inputs'] as const : width < 768 ? ['today', 'runs', 'queue', 'more'] as const : staff;
+    const visible = reviewer ? ['home', 'inputs'] as const : width < 768 ? ['runs', 'recovery', 'needs', 'audit', 'more'] as const : staff;
     for (const key of visible) await expect(navigation.getByRole('link', { name: m.nav[key], exact: true })).toBeVisible();
     await noSidewaysScroll(page);
     await expect(page.locator('.count-badge')).toHaveCount(0);

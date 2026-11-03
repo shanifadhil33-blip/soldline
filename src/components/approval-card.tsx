@@ -30,7 +30,7 @@ export function ApprovalCard({approval:a,locale,onRefresh}:{approval:Approval;lo
     } catch {setResult(m.error);} finally {setBusy(false);}
   }
   const value=(v:unknown):string=>v===null?m.none:typeof v==='object'?JSON.stringify(v):String(v);
-  return <section className="approval-card" aria-label={m.approval} data-approval-id={a.id}>
+  return <section className="approval-card" aria-label={m.approval} data-approval-id={a.id} data-sheet={a.status === 'pending' ? 'true' : undefined}>
     <h2>{m.approval}</h2><p>{m.statuses[a.status as keyof typeof m.statuses]??m.none}</p>
     <span className="sample-badge">{m.reversibility[a.reversibility]}</span>
     {a.status==='stale'&&<p role="alert" className="stale-notice">{staleText(a.stale_reason as string|undefined,locale)}</p>}
