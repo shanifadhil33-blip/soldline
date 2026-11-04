@@ -8,7 +8,7 @@ it('Shows the stored stale reason and refuses all decision buttons',()=>{
   const html=renderToStaticMarkup(<ApprovalCard approval={a} locale="en" onRefresh={async()=>{}}/>);
   expect(html).toContain('Out of date: HubSpot deal changed');
   expect(html).toContain('. Review again.');
-  for(const label of ['Approve','Change','Reject'])expect(html).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${label}</button>`));
+  for(const label of ['Approve plan','Ask for changes','Reject'])expect(html).toMatch(new RegExp(`<button[^>]*disabled=""[^>]*>${label}</button>`));
   expect(html).not.toContain('Execute approved work');
   expect(html).toContain('18000');expect(html).toContain('19000');
 });

@@ -4,12 +4,13 @@ import { withMember } from '../../../../server/db/withMember';
 import { withMemberRoute, answer, fail } from '../../../../server/http';
 import { clearDemoWorkspace } from '../../../../server/demo/read-cache';
 import { assertCan } from '../../../../server/permissions';
-export const GET=withMemberRoute(async (_request,context,member)=>{
+export async function GET(request:Request,context:{params:Promise<Record<string,string>>}) {
+  const member=await getMember(request);if(!member)return fail(401);
   const {id}=await context.params;
   const detail=await getOwnerServices().trust.deliverable(member,id);
   if(!detail) return Response.json({message:'Record not found'},{status:404});
   return Response.json({...detail,due:detail.due});
-});
+}
 
 export async function POST(request:Request,context:{params:Promise<Record<string,string>>}) {
   const member=await getMember(request);if(!member)return fail(401);

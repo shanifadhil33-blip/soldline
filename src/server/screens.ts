@@ -15,7 +15,7 @@ export async function screenData<T>(read:(db:SqlConnection,member:Member)=>Promi
   return load();
 }
 export async function readRuns(db:SqlConnection):Promise<RunRow[]> {
-  return (await db.query<RunRow>(`SELECT r.id,w.is_demo,c.name AS client,d.name AS deal,r.status,r.won_at AS won,r.ready_at AS ready,m.display_name AS owner FROM runs r JOIN workspaces w ON w.id=r.workspace_id JOIN deals d ON d.id=r.deal_id AND d.workspace_id=r.workspace_id JOIN client_companies c ON c.id=d.client_company_id AND c.workspace_id=d.workspace_id LEFT JOIN members m ON m.id=r.delivery_lead_id AND m.workspace_id=r.workspace_id ORDER BY r.created_at DESC,r.id`)).rows;
+  return (await db.query<RunRow>(`SELECT r.id,w.is_demo,coalesce(c.name,d.name) AS client,d.name AS deal,r.status,r.won_at AS won,r.ready_at AS ready,m.display_name AS owner FROM runs r JOIN workspaces w ON w.id=r.workspace_id JOIN deals d ON d.id=r.deal_id AND d.workspace_id=r.workspace_id LEFT JOIN client_companies c ON c.id=d.client_company_id AND c.workspace_id=d.workspace_id LEFT JOIN members m ON m.id=r.delivery_lead_id AND m.workspace_id=r.workspace_id ORDER BY r.created_at DESC,r.id`)).rows;
 }
 export type TeamRow = { name: string; roles: string[]; company: string | null };
 export async function readTeam(db: SqlConnection): Promise<TeamRow[]> {
