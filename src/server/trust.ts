@@ -4,6 +4,7 @@ import { append, verifyChain } from './audit';
 import { assertCan, ForbiddenError, type Member } from './permissions';
 import { Connections, type Provider } from './integrations/connections';
 import type { SqlConnection, TransactionDriver } from './db/withMember';
+import { agencyPeopleFor, clientPeopleFor, sentence, tellMembers } from './client-flow';
 
 export async function clientRecords(db:SqlConnection,member:Member) {
   // RLS and an explicit company predicate both protect every client collection.
@@ -12,7 +13,7 @@ export async function clientRecords(db:SqlConnection,member:Member) {
   const runs=(await db.query<{id:string;name:string}>(`SELECT r.id,d.name FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 AND ($2::uuid IS NULL OR d.client_company_id=$2) ORDER BY d.name`,[member.workspace_id,company])).rows;
   const ids=runs.map(r=>r.id);
   const inputs=(await db.query<{id:string;run_id:string;label:string;status:string}>('SELECT id,run_id,label,status FROM onboarding_inputs WHERE run_id=ANY($1::uuid[]) ORDER BY id',[ids])).rows;
-  const deliverables=(await db.query<{id:string;run_id:string;title:string;status:string}>(`SELECT t.task_id AS id,t.run_id,s.title,CASE WHEN lower(t.status)='client review' AND t.client_approved_at>=coalesce(t.review_since,t.observed_at) THEN 'approved' ELSE t.status END AS status FROM monitor_tasks t LEFT JOIN scope_items s ON s.workspace_id=t.workspace_id AND s.id=t.scope_item_id WHERE t.run_id=ANY($1::uuid[]) ORDER BY t.task_id`,[ids])).rows;
+  const deliverables=(await db.query<{id:string;run_id:string;title:string;status:string;due:string|null;again:boolean}>(`SELECT t.task_id AS id,t.run_id,s.title,CASE WHEN lower(t.status)='client review' AND t.client_approved_at>=coalesce(t.review_since,t.observed_at) THEN 'approved' ELSE t.status END AS status,t.due_at AS due,EXISTS(SELECT 1 FROM recovery_items x WHERE x.workspace_id=t.workspace_id AND x.run_id=t.run_id AND x.kind='client_changes:'||t.task_id AND x.status='resolved') AS again FROM monitor_tasks t LEFT JOIN scope_items s ON s.workspace_id=t.workspace_id AND s.id=t.scope_item_id WHERE t.run_id=ANY($1::uuid[]) ORDER BY (lower(t.status)='client review') DESC,t.task_id`,[ids])).rows;
   return {runs,inputs,deliverables};
 }
 export function trustStore(owner:TransactionDriver) {
@@ -83,20 +84,69 @@ export function trustStore(owner:TransactionDriver) {
         if(row.status===status)return {status:200};
         await db.query(`INSERT INTO jobs(workspace_id,run_id,kind,dedupe_key,payload,status,next_attempt_at) VALUES($1,$2,'task_status',$3,$4,'queued',now()) ON CONFLICT DO NOTHING`,[actor.workspace_id,row.run_id,'task_status:'+id+':'+status+':'+row.observed_at,JSON.stringify({taskId:id,status})]);
         await append(db,actor.workspace_id,{action:'task_status_requested',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id,status}});
+        // A sample workspace has no live ClickUp board to report back, so the sample task changes right away.
+        if(actor.is_demo)await db.query("UPDATE monitor_tasks SET status=$4,review_since=CASE WHEN $4='client review' THEN now() ELSE review_since END,client_approved_at=NULL,client_approved_by=NULL WHERE workspace_id=$1 AND run_id=$2 AND task_id=$3",[actor.workspace_id,row.run_id,id,status]);
+        if(state==='review'){
+          const title=(await db.query<{title:string|null}>("SELECT s.title FROM monitor_tasks t LEFT JOIN scope_items s ON s.workspace_id=t.workspace_id AND s.id=t.scope_item_id WHERE t.workspace_id=$1 AND t.run_id=$2 AND t.task_id=$3",[actor.workspace_id,row.run_id,id])).rows[0]?.title??'';
+          await tellMembers(db,actor.workspace_id,await clientPeopleFor(db,actor.workspace_id,row.run_id),{kind:'client_ready',en:sentence('en','doneTask',{title}),ar:sentence('ar','doneTask',{title}),link:`/deliverables/${encodeURIComponent(id)}`,dedupe:`ready:${id}:${Date.now()}`},actor.id);
+          await tellMembers(db,actor.workspace_id,await agencyPeopleFor(db,actor.workspace_id,row.run_id),{kind:'client_step',en:sentence('en','doneTask',{title}),ar:sentence('ar','doneTask',{title}),link:`/deliverables/${encodeURIComponent(id)}`,dedupe:`task_done:${id}:${Date.now()}`},actor.id);
+        }
         return {status:200};
       });
     },
     async approveDeliverable(member:Member,id:string,guard=assertCan) {
       return owner.transaction(async db=>{
         const actor=await identity(db,member);if(!actor)return {status:404};
-        const row=(await db.query<{run_id:string;status:string;company:string;already_approved:boolean;review_cycle:string}>(`SELECT t.run_id,t.status,coalesce(t.review_since,t.observed_at)::text AS review_cycle,t.client_approved_at>=coalesce(t.review_since,t.observed_at) AS already_approved,d.client_company_id AS company FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE t.workspace_id=$1 AND t.task_id=$2 FOR UPDATE OF t`,[actor.workspace_id,id])).rows[0];
+        const row=(await db.query<{run_id:string;status:string;company:string;already_approved:boolean;review_cycle:string;title:string|null}>(`SELECT t.run_id,t.status,coalesce(t.review_since,t.observed_at)::text AS review_cycle,t.client_approved_at>=coalesce(t.review_since,t.observed_at) AS already_approved,d.client_company_id AS company,(SELECT s.title FROM scope_items s WHERE s.workspace_id=t.workspace_id AND s.id=t.scope_item_id) AS title FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE t.workspace_id=$1 AND t.task_id=$2 FOR UPDATE OF t`,[actor.workspace_id,id])).rows[0];
         if(!row||!actor.roles.includes('client_reviewer')||row.company!==actor.client_company_id)return {status:404};
         guard(actor,'see_runs',{workspace_id:actor.workspace_id,client_company_id:row.company});
         if(row.status.toLowerCase()!=='client review'||row.already_approved)return {status:409};
         await db.query("UPDATE monitor_tasks SET review_since=coalesce(review_since,observed_at),client_approved_at=now(),client_approved_by=$4 WHERE workspace_id=$1 AND run_id=$2 AND task_id=$3",[actor.workspace_id,row.run_id,id,actor.id]);
         await db.query(`INSERT INTO jobs(workspace_id,run_id,kind,dedupe_key,payload,status,next_attempt_at) VALUES($1,$2,'task_status',$3,$4,'queued',now()) ON CONFLICT DO NOTHING`,[actor.workspace_id,row.run_id,'client_complete:'+id+':'+row.review_cycle,JSON.stringify({taskId:id,status:deliveryStatuses.approved})]);
-        await append(db,actor.workspace_id,{action:'deliverable_approved',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id}});
-        return {status:200};
+        await append(db,actor.workspace_id,{action:'deliverable_approved',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id,title:row.title}});
+        // The generic notice from the database is replaced by one that names who decided and what.
+        await db.query("DELETE FROM notifications WHERE workspace_id=$1 AND dedupe_key=$2",[actor.workspace_id,'client_review:'+id]);
+        const title=row.title??'';
+        await tellMembers(db,actor.workspace_id,await agencyPeopleFor(db,actor.workspace_id,row.run_id,id),{kind:'client_step',en:sentence('en','approved',{name:actor.display_name,title}),ar:sentence('ar','approved',{name:actor.display_name,title}),link:`/deliverables/${encodeURIComponent(id)}`,dedupe:`client_approved:${id}:${row.review_cycle}`});
+        return {status:200,title};
+      });
+    },
+    /** The client asks for changes with a note. It becomes a fix for the delivery lead and the specialist hears about it too. */
+    async requestChanges(member:Member,id:string,note:string,guard=assertCan) {
+      return owner.transaction(async db=>{
+        const actor=await identity(db,member);if(!actor)return {status:404};
+        const text=note.trim();
+        const row=(await db.query<{run_id:string;status:string;company:string;already_approved:boolean;title:string|null;lead:string|null;manager:string|null}>(`SELECT t.run_id,t.status,t.client_approved_at>=coalesce(t.review_since,t.observed_at) AS already_approved,d.client_company_id AS company,(SELECT s.title FROM scope_items s WHERE s.workspace_id=t.workspace_id AND s.id=t.scope_item_id) AS title,r.delivery_lead_id AS lead,d.owner_member_id AS manager FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE t.workspace_id=$1 AND t.task_id=$2 FOR UPDATE OF t`,[actor.workspace_id,id])).rows[0];
+        if(!row||!actor.roles.includes('client_reviewer')||row.company!==actor.client_company_id)return {status:404};
+        guard(actor,'see_runs',{workspace_id:actor.workspace_id,client_company_id:row.company});
+        if(!text||text.length>2000)return {status:400};
+        if(row.status.toLowerCase()!=='client review'||row.already_approved)return {status:409};
+        const title=row.title??'';
+        await db.query("UPDATE monitor_tasks SET status='changes requested' WHERE workspace_id=$1 AND run_id=$2 AND task_id=$3",[actor.workspace_id,row.run_id,id]);
+        const item=(await db.query<{id:string}>(`INSERT INTO recovery_items(workspace_id,run_id,kind,title,plain_reason,owner_member_id,status,allowed_options) VALUES($1,$2,$3,$4,$5,$6,'open',ARRAY['resolve_with_note']) RETURNING id`,[actor.workspace_id,row.run_id,'client_changes:'+id,`${actor.display_name} asked for changes to ${title}`,text,row.lead??row.manager])).rows[0];
+        await append(db,actor.workspace_id,{action:'deliverable_changes_requested',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{task_id:id,title,note:text}});
+        // The database notice for the owner is replaced by one that names the client and the work.
+        await db.query("DELETE FROM notifications WHERE workspace_id=$1 AND dedupe_key=$2",[actor.workspace_id,'recovery:'+item.id]);
+        await tellMembers(db,actor.workspace_id,[...await agencyPeopleFor(db,actor.workspace_id,row.run_id,id)],{kind:'client_step',en:sentence('en','changes',{name:actor.display_name,title}),ar:sentence('ar','changes',{name:actor.display_name,title}),link:'/recovery',dedupe:`client_changes:${item.id}`});
+        return {status:200,title};
+      });
+    },
+    /** Everything the detail screen shows for one deliverable, for the client who owns it or the agency staff who work on it. */
+    async deliverable(member:Member,id:string) {
+      return owner.transaction(async db=>{
+        const actor=await identity(db,member);if(!actor)return null;
+        const row=(await db.query<{run_id:string;status:string;due_at:string|null;title:string|null;quantity:number|null;cadence:string|null;source_page:number|null;source_quote:string|null;project:string;client:string;company:string;approved:boolean;assignees:string[];lead:string|null;manager:string|null}>(`SELECT t.run_id,t.status,t.due_at,s.title,s.quantity,s.cadence,s.source_page,s.source_quote,d.name AS project,c.name AS client,d.client_company_id AS company,coalesce(t.client_approved_at>=coalesce(t.review_since,t.observed_at),false) AS approved,t.assignee_ids AS assignees,r.delivery_lead_id AS lead,d.owner_member_id AS manager FROM monitor_tasks t JOIN runs r ON r.workspace_id=t.workspace_id AND r.id=t.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id JOIN client_companies c ON c.workspace_id=d.workspace_id AND c.id=d.client_company_id LEFT JOIN scope_items s ON s.workspace_id=t.workspace_id AND s.id=t.scope_item_id WHERE t.workspace_id=$1 AND t.task_id=$2 ORDER BY t.observed_at DESC LIMIT 1`,[actor.workspace_id,id])).rows[0];
+        if(!row)return null;
+        const isClient=actor.roles.includes('client_reviewer');
+        if(isClient&&row.company!==actor.client_company_id)return null;
+        if(!isClient&&!actor.roles.some(r=>['admin','account_manager','delivery_lead'].includes(r))) {
+          const mine=(await db.query("SELECT 1 FROM members m WHERE m.id=$1 AND (m.clickup_user_id=ANY($2::text[]) OR m.preferred_name=ANY($2::text[]))",[actor.id,row.assignees])).rows.length>0;
+          if(!mine)return null;
+        }
+        const makers=(await db.query<{display_name:string}>("SELECT display_name FROM members WHERE workspace_id=$1 AND archived_at IS NULL AND NOT ('client_reviewer'=ANY(roles)) AND (clickup_user_id=ANY($2::text[]) OR preferred_name=ANY($2::text[])) ORDER BY display_name",[actor.workspace_id,row.assignees])).rows.map(r=>r.display_name);
+        const rounds=(await db.query<{id:string;asked_by:string|null;note:string|null;asked_at:string;fixed_note:string|null;status:string;fixed_at:string|null}>(`SELECT x.id,split_part(x.title,' asked for changes to ',1) AS asked_by,x.plain_reason AS note,x.created_at::text AS asked_at,x.resolution_note AS fixed_note,x.status,(SELECT max(a.at)::text FROM audit_log a WHERE a.workspace_id=x.workspace_id AND a.action='recovery_resolve_with_note' AND a.target_id=x.id::text) AS fixed_at FROM recovery_items x WHERE x.workspace_id=$1 AND x.kind=$2 ORDER BY x.created_at,x.id`,[actor.workspace_id,'client_changes:'+id])).rows;
+        const status=row.status.toLowerCase()==='client review'&&row.approved?'approved':row.status;
+        return {id,run_id:row.run_id,title:row.title,status,due:row.due_at,project:row.project,client:row.client,quantity:row.quantity,cadence:row.cadence,page:row.source_page,quote:isClient?null:row.source_quote,makers,rounds,again:rounds.some(r=>r.status==='resolved'),canDecide:isClient&&status.toLowerCase()==='client review',isClient};
       });
     },
   };

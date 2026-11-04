@@ -7,6 +7,7 @@ import { approvalStore } from '../approvals/store';
 import { liveRead } from '../approvals/live';
 import type { Approval, Payload } from '../approvals/model';
 import type { Effect } from '../executor/model';
+import { sendBackForReview } from '../client-flow';
 export const options=['retry_now','resolve_with_note','cancel_remaining','reconcile'] as const;
 export type Option=typeof options[number];
 type Recovery=Record<string,unknown>&{id:string;workspace_id:string;run_id:string;job_id:string|null;owner_member_id:string|null;status:string;allowed_options:string[]};
@@ -57,6 +58,7 @@ export function recoveryStore(owner:TransactionDriver) {
           }
           if(option==='cancel_remaining') await cancel(db,actor.workspace_id,item.run_id,'cancelled');
           await db.query('UPDATE recovery_items SET status=$3,resolved_by=$4,resolution_note=$5 WHERE workspace_id=$1 AND id=$2',[actor.workspace_id,id,option==='cancel_remaining'?'cancelled':'resolved',actor.id,note]);
+          if(option==='resolve_with_note') await sendBackForReview(db,actor.workspace_id,item.kind as string|null,item.run_id,actor.id);
         }
         await append(db,actor.workspace_id,{action:'recovery_'+option,outcome:'succeeded',target_id:id,after:{note}});
         return {status:200,message:option==='retry_now'?'Retry queued':option==='reconcile'?'Sent mail check queued':'Decision recorded'};
