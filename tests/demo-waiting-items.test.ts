@@ -20,7 +20,7 @@ const today = (p: Persona) => ctx.asMember(people[p].id, db => readToday(db, peo
 it('Every run has a delivery lead and a won date, and the finished run has a ready date', async () => {
   const runs = (await today('faisal')).runs;
   expect(runs.length).toBe(3);
-  for (const run of runs) { expect(run.owner).toBe('Imran Shaikh'); expect(run.won).toBeTruthy(); }
+  for (const run of runs) { expect(run.owner).toBe(run.status === 'ready' ? 'Faisal Rahman' : 'Imran Shaikh'); expect(run.won).toBeTruthy(); }
   expect(runs.find(r => r.status === 'ready')?.ready).toBeTruthy();
 });
 

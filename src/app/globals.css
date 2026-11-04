@@ -423,7 +423,7 @@ button.button:disabled, .button[aria-disabled="true"], .settings-card .button:di
 .bell { position: relative; }
 .bell-button { position: relative; display: inline-grid; place-items: center; inline-size: 44px; block-size: 44px; border: 1px solid var(--border-structure); border-radius: 999px; background: #fff; }
 .bell-button svg { inline-size: 22px; block-size: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.bell-count { position: absolute; inset-block-start: -4px; inset-inline-end: -4px; min-inline-size: 20px; block-size: 20px; padding-inline: 5px; border-radius: 10px; background: #8b432b; color: #fff; font-size: 13px; display: grid; place-items: center; }
+.bell-count { position: absolute; inset-block-start: -4px; inset-inline-end: -4px; min-inline-size: 20px; block-size: 20px; padding-inline: 5px; border-radius: 10px; background: #8b432b; color: #fff; font-size: 14px; display: grid; place-items: center; }
 .bell-panel { position: absolute; z-index: 60; inset-block-start: calc(100% + 8px); inset-inline-end: 0; inline-size: min(380px, calc(100vw - 32px)); max-block-size: 70vh; overflow: auto; padding: 8px; border-radius: 20px; background: #fff; box-shadow: 0 12px 40px rgb(0 0 0 / 16%); }
 .bell-panel h2 { font-size: 16px; padding: 8px 12px; margin: 0; }
 .bell-panel ul { list-style: none; margin: 0; padding: 0; }
@@ -446,3 +446,11 @@ button.button:disabled, .button[aria-disabled="true"], .settings-card .button:di
 .account-menu .menu-row.strong { font-weight: 700; }
 .empty-friendly { padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: #FBFAF8; }
 .run-lead { display: grid; gap: 16px; }
+
+/* Phone: title and client get the full row; the status and action sit underneath. */
+@media (max-width: 767px) {
+  .record-list li:has(> .status-chip):has(> button) { flex-wrap: wrap; align-items: center; padding-block: 12px; row-gap: 10px; }
+  .record-list li:has(> .status-chip):has(> button) > .row-text { flex: 1 1 100%; }
+  .record-list li:has(> .status-chip):has(> button) .status-chip { min-inline-size: 0; }
+  .record-list li:has(> .status-chip):has(> button) > button { min-block-size: 44px; margin-inline-start: auto; }
+}
