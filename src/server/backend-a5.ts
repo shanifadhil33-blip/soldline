@@ -39,8 +39,9 @@ export async function permittedData(db:SqlConnection,m:Member):Promise<Record<st
   const runs=(await db.query<{id:string;name:string;status:string;workspace_id:string}>(`SELECT r.id,r.workspace_id,d.name,r.status FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 ORDER BY r.id`,[m.workspace_id])).rows;
   const ids=runs.map(r=>r.id);
   const result:Record<string,Record<string,unknown>[]>={runs};
-  for(const [key,table,columns] of [['findings','findings','id,run_id,title,status'],['approvals','approvals','id,run_id,kind,status'],['recovery','recovery_items','id,run_id,kind,status'],['inputs','onboarding_inputs','id,run_id,label,status'],['tasks','monitor_tasks','task_id AS id,run_id,status']] as const){
-    result[key]=(await db.query(`SELECT ${columns} FROM ${table} WHERE workspace_id=$1 AND run_id=ANY($2::uuid[]) ORDER BY run_id`,[m.workspace_id,ids])).rows;
+  for(const [key,table,columns] of [['findings','findings','id,run_id,title,status'],['approvals','approvals','DISTINCT ON (run_id) id,run_id,kind,status'],['recovery','recovery_items','id,run_id,kind,status'],['inputs','onboarding_inputs','id,run_id,label,status'],['tasks','monitor_tasks','task_id AS id,run_id,status']] as const){
+    const open=key==='approvals'?" AND status IN ('pending','stale')":key==='recovery'?" AND status IN ('open','retrying')":key==='inputs'?" AND status='missing'":'';
+    result[key]=(await db.query(`SELECT ${columns} FROM ${table} WHERE workspace_id=$1 AND run_id=ANY($2::uuid[])${open} ORDER BY run_id`,[m.workspace_id,ids])).rows;
   }
   return result;
 }

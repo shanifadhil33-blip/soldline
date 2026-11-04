@@ -4,7 +4,7 @@ import { loadMessages, type Language } from '../lib/i18n';
 
 type Row = { label: string; count: number };
 type Card = { id: string; label: string; choices: { yes: string; change: string } };
-type Message = { id: number; from: 'you' | 'agent'; text: string; rows?: Row[]; card?: Card; decided?: string };
+type Message = { id: number; from: 'you' | 'agent'; text: string; rows?: Row[]; link?: { href: string; label: string }; card?: Card; decided?: string };
 
 /** Agent chat. A side panel on a laptop and a full screen sheet on a phone. Typing, Stop and Close always work. */
 export function AgentChat({ locale, open, onClose, firstName }: { locale: Language; open: boolean; onClose: () => void; firstName: string }) {
@@ -36,10 +36,10 @@ export function AgentChat({ locale, open, onClose, firstName }: { locale: Langua
     try {
       const response = await fetch('/api/agent/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal, body: JSON.stringify({ message, language: locale, threadId: thread.current }) });
       if (!response.ok) throw new Error();
-      const body = await response.json() as { threadId?: string; agentName?: string; intro?: string; rows?: Row[]; card?: Card | null };
+      const body = await response.json() as { threadId?: string; agentName?: string; intro?: string; rows?: Row[]; link?: { href: string; label: string }; card?: Card | null };
       thread.current = body.threadId ?? thread.current;
       if (body.agentName) setName(body.agentName);
-      setMessages(list => [...list, { id: next(), from: 'agent', text: body.intro ?? '', rows: Array.isArray(body.rows) ? body.rows.filter(row => row.count > 0) : [], card: body.card ?? undefined }]);
+      setMessages(list => [...list, { id: next(), from: 'agent', text: body.intro ?? '', rows: Array.isArray(body.rows) ? body.rows.filter(row => row.count > 0) : [], link: body.link, card: body.card ?? undefined }]);
     } catch {
       if (!controller.signal.aborted || abort.current === controller) setMessages(list => [...list, { id: next(), from: 'agent', text: m.error }]);
     } finally {
@@ -64,6 +64,7 @@ export function AgentChat({ locale, open, onClose, firstName }: { locale: Langua
       {messages.map(message => <div className="agent-bubble" data-from={message.from} key={message.id}>
         <p>{message.text}</p>
         {message.rows && message.rows.length > 0 && <ul>{message.rows.map(row => <li key={row.label}><span>{row.label}</span><bdi>{row.count}</bdi></li>)}</ul>}
+        {message.link && <p><a className="button" href={message.link.href}>{message.link.label}</a></p>}
         {message.card && <div className="agent-card"><strong>{message.card.label}</strong><div className="agent-choices"><button type="button" className="button primary" disabled={!!message.decided} onClick={() => void decide(message.id, message.card!, 'yes')}>{message.card.choices.yes || m.yes}</button><button type="button" className="button" disabled={!!message.decided} onClick={() => void decide(message.id, message.card!, 'change')}>{message.card.choices.change}</button></div></div>}
       </div>)}
       {busy && <p className="agent-bubble agent-typing" data-from="agent" role="status"><span className="dots" aria-hidden="true"><i /><i /><i /></span><span className="visually-hidden">{c.typing}</span></p>}

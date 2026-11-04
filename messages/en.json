@@ -784,6 +784,14 @@
       "askChanges": "Ask for changes",
       "sendChanges": "Send changes",
       "decideBy": "Decide by"
+    },
+    "agentAnswer": {
+      "intro": "Here is what is holding up {project}.",
+      "inputs": "Still needed from the client: {list}.",
+      "fixes": "Open fixes: {list}.",
+      "approval": "A plan is waiting for approval.",
+      "none": "Nothing is holding up {project} right now.",
+      "open": "Open {project}"
     }
   }
 }

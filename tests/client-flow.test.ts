@@ -8,6 +8,7 @@ import { readRuns } from '../src/server/screens';
 import { clientRecords } from '../src/server/trust';
 import type { Member } from '../src/server/permissions';
 import { noteText } from '../src/lib/plain';
+import { directAnswer } from '../src/server/agent-answer';
 
 let ctx: Awaited<ReturnType<typeof createDatabase>>;
 let services: ReturnType<typeof fixtureRuntime>['owner'];
@@ -97,4 +98,16 @@ it('A client marks an input as sent and the agency confirms it', async () => {
   expect((await services.trust.markInputSent(people.karim, input.id)).status).toBe(200);
   expect((await client('karim')).inputs.find(i => i.id === input.id)?.sent).toBe(true);
   expect((await today('omar')).news.map(n => noteText(n.body, 'en')).some(t => t.startsWith('Karim Nasser sent'))).toBe(true);
+});
+
+it('Agent answers what is blocking a project by name, with a link, in both languages', async () => {
+  for (const language of ['en', 'ar'] as const) {
+    const answer = await ctx.asMember(people.imran.id, db => directAnswer(db, people.imran, 'What is blocking Cedar Line?', language));
+    expect(answer).not.toBeNull();
+    expect(answer!.link.href).toMatch(/^\/runs\//);
+    expect(answer!.text).not.toMatch(/Projects \d/);
+    if (language === 'en') expect(answer!.text.toLowerCase()).toContain('product photos');
+  }
+  const none = await ctx.asMember(people.imran.id, db => directAnswer(db, people.imran, 'hello', 'en'));
+  expect(none).toBeNull();
 });

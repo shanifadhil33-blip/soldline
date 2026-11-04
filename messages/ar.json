@@ -784,6 +784,14 @@
       "askChanges": "طلب تعديلات",
       "sendChanges": "إرسال التعديلات",
       "decideBy": "القرار قبل"
+    },
+    "agentAnswer": {
+      "intro": "هذا ما يعطل {project}.",
+      "inputs": "ما زال مطلوبا من العميل: {list}.",
+      "fixes": "تعديلات مفتوحة: {list}.",
+      "approval": "هناك خطة بانتظار الموافقة.",
+      "none": "لا شيء يعطل {project} الآن.",
+      "open": "افتح {project}"
     }
   }
 }
