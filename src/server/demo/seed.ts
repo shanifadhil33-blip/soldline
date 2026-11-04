@@ -39,7 +39,7 @@ export async function seedSandbox(db: SqlConnection, ws: string, expiry: Date) {
   const scopeItemIds = scopeTitles.map(() => randomUUID());
   for (let i = 0; i < scopeTitles.length; i++) await insert('scope_items', { id: scopeItemIds[i], scope_version_id: version, key: String(i + 1), title: scopeTitles[i], quantity: i === 2 ? 4 : 1, cadence: [2, 3, 7].includes(i) ? 'monthly' : 'once', source_page: Math.min(3, 1 + Math.floor(i / 3)) });
   for (const name of ['Blog posts', 'SEO report', 'Meta ads setup', 'Results dashboard']) await insert('line_items', { deal_id: deal, name });
-  // Every sample run has a delivery lead (Imran) and a won date, so each role sees its own work.
+  // Every sample run has a delivery lead (Imran, or Faisal for the finished one) and a won date, so each role sees its own work.
   const daysAgo = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
   const harborTasks = scopeTitles.map((title, index) => ({ scopeItem: index + 1, title, list: ['Setup', 'Content', 'Ads', 'Reporting'][Math.floor(index / 2)], owner: ids.ravi, due: new Date(Date.now() + 86400000 * (index + 1)).toISOString() }));
   await insert('runs', { id: run, deal_id: deal, run_key: `sample_${run}`, status: 'waiting_approval', scope_version_id: version, plan: JSON.stringify({ label: 'Sample data', tasks: harborTasks }), delivery_lead_id: ids.imran, won_at: daysAgo(2) });
@@ -56,7 +56,7 @@ export async function seedSandbox(db: SqlConnection, ws: string, expiry: Date) {
   const summit = randomUUID(), summitDeal = randomUUID();
   await insert('client_companies', { id: summit, name: 'Summit Trail Outfitters' });
   await insert('deals', { id: summitDeal, client_company_id: summit, hubspot_deal_id: `sample_${summitDeal}`, name: 'Summit Trail Outfitters, ads retainer', amount: '9000', currency: 'AED', owner_member_id: ids.omar });
-  await insert('runs', { deal_id: summitDeal, run_key: `sample_${summitDeal}`, status: 'ready', plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.imran, won_at: daysAgo(9), ready_at: daysAgo(8.5) });
+  await insert('runs', { deal_id: summitDeal, run_key: `sample_${summitDeal}`, status: 'ready', plan: JSON.stringify({ label: 'Sample data' }), delivery_lead_id: ids.faisal, won_at: daysAgo(9), ready_at: daysAgo(8.5) });
   await seedSampleInbox(db, ws);
   await seedWaitingItems(db, insert, { ws, run, cedarRun, deal, version, ids, expiry, daysAgo, scopeItemIds, tasks: harborTasks });
 }

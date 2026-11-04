@@ -12,10 +12,13 @@ afterAll(async()=>{await db?.close();vi.unstubAllEnvs();});
 for(const persona of ['omar','imran']) it(`Every sample run has a delivery lead and a won date, and the backend check works for ${persona} on each run`,async()=>{
  const begun=await start(new Request('http://localhost/api/demo/start',{method:'POST',body:JSON.stringify({persona})}));
  const {sandbox}=await begun.json(),cookie=begun.headers.get('set-cookie')!.split(';')[0];
+ const imranId=(await db.query<{id:string}>("SELECT id FROM members WHERE workspace_id=$1 AND preferred_name='imran'",[sandbox])).rows[0].id;
  const runs=(await db.query<{id:string;delivery_lead_id:string|null;won_at:string|null}>('SELECT id,delivery_lead_id,won_at FROM runs WHERE workspace_id=$1',[sandbox])).rows;
  expect(runs.length).toBeGreaterThan(1);
  for(const run of runs){
   expect(run.delivery_lead_id).not.toBeNull();expect(run.won_at).not.toBeNull();
+  // Imran only checks the projects he leads; the finished project is led by Faisal.
+  if(persona==='imran'&&run.delivery_lead_id!==imranId)continue;
   const response=await check(new Request('http://localhost/api/demo/backend-check',{method:'POST',headers:{cookie},body:JSON.stringify({runId:run.id})}));
   const body=await response.json();
   expect({run:run.id,status:response.status,body}).toMatchObject({status:200,body:{status:403,row:{outcome:'denied',actor_name_at_event:'Ravi Menon'}}});
