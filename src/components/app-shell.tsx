@@ -41,7 +41,8 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
     document.addEventListener('pointerdown', outside); document.addEventListener('keydown', key);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key); };
   }, [menu]);
-  useEffect(() => { setMenu(false); setAgent(false); setPending(null); }, [path]);
+  const [seenPath, setSeenPath] = useState(path);
+  if (seenPath !== path) { setSeenPath(path); setMenu(false); setAgent(false); setPending(null); }
   async function switchPersona(next: DemoPersona) {
     setBusy(true); setError(false);
     try { await startDemo(next); dialog.current?.close(); setConfirming(false); setMenu(false); router.replace(demoHome(next)); router.refresh(); }

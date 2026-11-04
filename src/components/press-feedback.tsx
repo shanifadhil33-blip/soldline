@@ -7,10 +7,10 @@ const pressable = 'a[href], button, [role="button"], [role="option"], [role="men
 /** Instant pressed state (pointerdown works on iOS where :active does not) and a top progress bar for screen changes. */
 export function PressFeedback() {
   const path = usePathname();
-  const [loading, setLoading] = useState(false);
+  const [loadingFrom, setLoadingFrom] = useState<string | null>(null);
+  const loading = loadingFrom === path;
   const pressed = useRef<Element | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => { setLoading(false); }, [path]);
   useEffect(() => {
     function clear() {
       pressed.current?.removeAttribute('data-pressed');
@@ -31,9 +31,9 @@ export function PressFeedback() {
       if (link.target && link.target !== '_self') return;
       if (link.hasAttribute('download') || link.origin !== location.origin) return;
       if (link.pathname === location.pathname && link.search === location.search) return;
-      setLoading(true);
+      setLoadingFrom(location.pathname);
       clearTimeout(timer.current);
-      timer.current = setTimeout(() => setLoading(false), 10000);
+      timer.current = setTimeout(() => setLoadingFrom(null), 10000);
     }
     document.addEventListener('pointerdown', down, { passive: true });
     for (const name of ['pointerup', 'pointercancel', 'dragstart', 'contextmenu']) document.addEventListener(name, clear, { passive: true });
