@@ -26,6 +26,7 @@ export async function POST(request:Request,context:{params:Promise<Record<string
     const {id}=await context.params;if(!z.uuid().safeParse(id).success)return fail(404);
     const body=z.object({confirm:z.literal(true)}).strict().or(z.object({sent:z.literal(true)}).strict()).safeParse(await request.json().catch(()=>null));
     if(!body.success)return fail(400,'Confirm that the input was sent.');
+    assertCan(member,'mark_input_received',{workspace_id:member.workspace_id,client_company_id:member.client_company_id});
     const sent=await getOwnerServices().trust.markInputSent(member,id) as {status:number;title?:string};
     return sent.status<400?Response.json({ok:true,message:'Input marked as sent',title:sent.title}):fail(sent.status);
   }
