@@ -7,7 +7,7 @@ import { cookieName, verifyDemo } from './demo/cookie';
 import { getMember } from './session';
 import { getAppDriver } from './db/runtime';
 import { withMember } from './db/withMember';
-import { readDemoCache, writeDemoCache } from './demo/read-cache';
+import { demoCached, readDemoCache, writeDemoCache } from './demo/read-cache';
 
 export type ShellProps = { locale: Language; workspace: string; name: string; isDemo: boolean; reviewer: boolean; limited: boolean; persona?: DemoPersona };
 
@@ -19,7 +19,11 @@ export async function loadShell(): Promise<ShellProps | null> {
   const ticket = verifyDemo(jar.get(cookieName)?.value, process.env.DEMO_SIGNING_KEY ?? '');
   if (ticket) {
     const persona = demoPeople.find(person => person.id === ticket.persona);
-    return { locale, workspace: 'Northlight Studio', name: m.demo.people[ticket.persona], isDemo: true, reviewer: persona?.role === 'client_reviewer', limited: persona?.role === 'contributor', persona: ticket.persona };
+    // A name saved in Settings shows straight away; until one is saved the sample person's own name is used.
+    const own = await getMember(jar);
+    const saved = own ? await demoCached(own.workspace_id, `${own.id}:saved-name`, () => withMember(getAppDriver(), own.id, async db => (await db.query<{ preferred_name: string | null }>('SELECT preferred_name FROM members WHERE id=$1', [own.id])).rows[0]?.preferred_name ?? '')) : '';
+    const shown = saved && saved.toLowerCase() !== ticket.persona ? saved : m.demo.people[ticket.persona];
+    return { locale, workspace: 'Northlight Studio', name: shown, isDemo: true, reviewer: persona?.role === 'client_reviewer', limited: persona?.role === 'contributor', persona: ticket.persona };
   }
   const member = await getMember(jar);
   if (!member) return null;

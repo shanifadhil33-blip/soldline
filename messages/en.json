@@ -413,8 +413,8 @@
       "paused": "Paused",
       "revoked": "Needs reconnect"
     },
-    "scopes": "Access",
-    "mayDo": "What Soldline may do",
+    "scopes": "What Soldline can read",
+    "mayDo": "What Soldline can do",
     "pause": "Pause",
     "resume": "Resume",
     "reconnect": "Reconnect",
@@ -441,8 +441,8 @@
       "send": "Send approved mail"
     },
     "actionOther": "Configured provider action",
-    "noScope": "No scopes recorded",
-    "noActions": "No actions recorded",
+    "noScope": "Nothing yet",
+    "noActions": "Nothing yet",
     "home": "Home",
     "inputs": "Inputs",
     "deliverables": "Deliverables",
@@ -488,7 +488,38 @@
     "startLink": "Go to the start page",
     "goneTitle": "This project is not here",
     "goneBody": "This sample may have been reset. Open Projects to see what is there now.",
-    "goneLink": "Go to Projects"
+    "goneLink": "Go to Projects",
+    "pauseAsk": "Pause {tool}? Soldline will stop using it until you resume.",
+    "pauseYes": "Yes, pause",
+    "pauseNo": "Keep it connected",
+    "pausedNote": "Paused. Soldline is not using this tool.",
+    "defaults": {
+      "hubspot": {
+        "reads": [
+          "Deals and their line items",
+          "Signed scope notes"
+        ],
+        "does": [
+          "Update delivery fields on a deal"
+        ]
+      },
+      "clickup": {
+        "reads": [
+          "Tasks, owners and due dates"
+        ],
+        "does": [
+          "Create lists, folders and tasks after you approve a plan"
+        ]
+      },
+      "mail": {
+        "reads": [
+          "Replies in the team inbox"
+        ],
+        "does": [
+          "Send emails only after you approve them"
+        ]
+      }
+    }
   },
   "legal": {
     "privacyLink": "Privacy",
@@ -792,6 +823,27 @@
       "approval": "A plan is waiting for approval.",
       "none": "Nothing is holding up {project} right now.",
       "open": "Open {project}"
-    }
+    },
+    "history": {
+      "soldline": "Soldline",
+      "approve_plan": "{name} approved the plan for {project}",
+      "approval_created": "{name} asked for approval of the plan for {project}",
+      "approval_decided": "{name} made a decision on {project}",
+      "deliverable_approved": "{name} approved {title}",
+      "deliverable_changes_requested": "{name} asked for changes to {title}",
+      "input_received": "{name} confirmed an item arrived for {project}",
+      "input_sent": "{name} sent {title}",
+      "recovery_resolve_with_note": "{name} fixed an issue on {project}",
+      "recovery_retry_now": "{name} tried again on {project}",
+      "recovery_cancel_remaining": "{name} stopped the remaining work on {project}",
+      "connection_paused": "{name} paused a connected tool",
+      "connection_resumed": "{name} resumed a connected tool",
+      "connection_saved": "{name} reconnected a tool",
+      "task_status_requested": "{name} marked {title} as done",
+      "other": "{name} updated {project}",
+      "project": "the project",
+      "chainOk": "Every entry here is kept as it happened."
+    },
+    "notYet": "Not yet"
   }
 }

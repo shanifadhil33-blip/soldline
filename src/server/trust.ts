@@ -53,7 +53,7 @@ export function trustStore(owner:TransactionDriver) {
           SELECT e.id::text,e.run_id FROM inbound_events e JOIN permitted p ON p.id=e.run_id UNION ALL
           SELECT t.task_id,t.run_id FROM monitor_tasks t JOIN permitted p ON p.id=t.run_id UNION ALL
           SELECT v.id::text,p.id FROM scope_versions v JOIN permitted p ON p.deal_id=v.deal_id
-        ) SELECT a.*,coalesce((SELECT t.run_id::text FROM targets t WHERE t.id=a.target_id LIMIT 1),(SELECT x.run_id::text FROM approvals x WHERE x.workspace_id=$1 AND x.id=a.approval_id)) AS run_id FROM audit_log a WHERE a.workspace_id=$1 AND ($5 OR a.target_id IN (SELECT id FROM targets) OR a.approval_id::text IN (SELECT id FROM targets)) ORDER BY a.id DESC`,[actor.workspace_id,actor.id,actor.roles.includes('delivery_lead'),actor.roles.includes('account_manager'),actor.roles.includes('admin')])).rows;
+        ) SELECT z.*,(SELECT d.name FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 AND r.id::text=z.run_id) AS project FROM (SELECT a.*,coalesce((SELECT t.run_id::text FROM targets t WHERE t.id=a.target_id LIMIT 1),(SELECT x.run_id::text FROM approvals x WHERE x.workspace_id=$1 AND x.id=a.approval_id)) AS run_id FROM audit_log a WHERE a.workspace_id=$1 AND ($5 OR a.target_id IN (SELECT id FROM targets) OR a.approval_id::text IN (SELECT id FROM targets))) z ORDER BY z.id DESC`,[actor.workspace_id,actor.id,actor.roles.includes('delivery_lead'),actor.roles.includes('account_manager'),actor.roles.includes('admin')])).rows;
         return {status:200,chain,rows};
       });
     },

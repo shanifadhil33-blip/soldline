@@ -192,7 +192,7 @@ export function jobStore(owner: TransactionDriver) {
     replay(member: Member, runId: string) {
       return owner.transaction(async db=>{
         // Recheck the stored member and workspace even when the caller came through a member route.
-        const allowed=await db.query<{allowed:boolean}>(`SELECT (m.roles && ARRAY['admin','delivery_lead'] OR (w.is_demo AND m.preferred_name='omar')) AS allowed FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE m.workspace_id=$1 AND m.id=$2 AND m.archived_at IS NULL AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())`,[member.workspace_id,member.id]);
+        const allowed=await db.query<{allowed:boolean}>(`SELECT (m.roles && ARRAY['admin','delivery_lead'] OR (w.is_demo AND m.display_name='Omar Haddad')) AS allowed FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE m.workspace_id=$1 AND m.id=$2 AND m.archived_at IS NULL AND (NOT coalesce(w.is_demo,false) OR w.demo_expires_at>now())`,[member.workspace_id,member.id]);
         if(!allowed.rows[0]?.allowed) {
           await systemAudit(db,member.workspace_id,'system','replay_refused',undefined,{member_id:member.id});
           return {status:403,newActions:0,message:'You do not have permission to replay this event'};

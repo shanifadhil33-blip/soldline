@@ -413,8 +413,8 @@
       "paused": "متوقف مؤقتا",
       "revoked": "يحتاج إعادة اتصال"
     },
-    "scopes": "الوصول",
-    "mayDo": "ما يمكن أن يفعله Soldline",
+    "scopes": "ما يمكن لSoldline قراءته",
+    "mayDo": "ما يمكن لSoldline فعله",
     "pause": "إيقاف مؤقت",
     "resume": "استئناف",
     "reconnect": "إعادة الاتصال",
@@ -441,8 +441,8 @@
       "send": "إرسال البريد المعتمد"
     },
     "actionOther": "إجراء المزود المحدد",
-    "noScope": "لا توجد صلاحيات مسجلة",
-    "noActions": "لا توجد إجراءات مسجلة",
+    "noScope": "لا شيء بعد",
+    "noActions": "لا شيء بعد",
     "home": "الرئيسية",
     "inputs": "المتطلبات",
     "deliverables": "التسليمات",
@@ -488,7 +488,38 @@
     "startLink": "اذهب إلى الصفحة الرئيسية",
     "goneTitle": "هذا المشروع غير موجود",
     "goneBody": "ربما أُعيد ضبط هذه العينة. افتح المشاريع لترى ما هو موجود الآن.",
-    "goneLink": "اذهب إلى المشاريع"
+    "goneLink": "اذهب إلى المشاريع",
+    "pauseAsk": "هل تريد إيقاف {tool} مؤقتا؟ سيتوقف Soldline عن استخدامه حتى تستأنفه.",
+    "pauseYes": "نعم، أوقفه مؤقتا",
+    "pauseNo": "أبقه متصلا",
+    "pausedNote": "متوقف مؤقتا. لا يستخدم Soldline هذه الأداة.",
+    "defaults": {
+      "hubspot": {
+        "reads": [
+          "الصفقات وبنودها",
+          "ملاحظات النطاق الموقعة"
+        ],
+        "does": [
+          "تحديث حقول التسليم في الصفقة"
+        ]
+      },
+      "clickup": {
+        "reads": [
+          "المهام وأصحابها وتواريخ التسليم"
+        ],
+        "does": [
+          "إنشاء القوائم والمجلدات والمهام بعد موافقتك على الخطة"
+        ]
+      },
+      "mail": {
+        "reads": [
+          "الردود في صندوق الفريق"
+        ],
+        "does": [
+          "إرسال البريد فقط بعد موافقتك عليه"
+        ]
+      }
+    }
   },
   "legal": {
     "privacyLink": "الخصوصية",
@@ -792,6 +823,27 @@
       "approval": "هناك خطة بانتظار الموافقة.",
       "none": "لا شيء يعطل {project} الآن.",
       "open": "افتح {project}"
-    }
+    },
+    "history": {
+      "soldline": "Soldline",
+      "approve_plan": "اعتمد {name} خطة {project}",
+      "approval_created": "طلب {name} الموافقة على خطة {project}",
+      "approval_decided": "اتخذ {name} قرارا بشأن {project}",
+      "deliverable_approved": "اعتمد {name} {title}",
+      "deliverable_changes_requested": "طلب {name} تعديلات على {title}",
+      "input_received": "أكد {name} وصول عنصر لمشروع {project}",
+      "input_sent": "أرسل {name} {title}",
+      "recovery_resolve_with_note": "أصلح {name} مشكلة في {project}",
+      "recovery_retry_now": "أعاد {name} المحاولة في {project}",
+      "recovery_cancel_remaining": "أوقف {name} ما تبقى من العمل في {project}",
+      "connection_paused": "أوقف {name} أداة متصلة مؤقتا",
+      "connection_resumed": "استأنف {name} أداة متصلة",
+      "connection_saved": "أعاد {name} ربط أداة",
+      "task_status_requested": "وضع {name} علامة تم على {title}",
+      "other": "حدّث {name} {project}",
+      "project": "المشروع",
+      "chainOk": "كل إدخال هنا محفوظ كما حدث."
+    },
+    "notYet": "ليس بعد"
   }
 }
