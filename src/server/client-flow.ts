@@ -16,9 +16,9 @@ export async function tellMembers(db: SqlConnection, ws: string, memberIds: (str
   if (!ids.length) return;
   await db.query(
     `INSERT INTO notifications(workspace_id,member_id,kind,body,link,dedupe_key,actor_member_id)
-     SELECT $1,m.id,$3,CASE WHEN m.language='ar' THEN $5 ELSE $4 END,$6,$7,$8 FROM members m
+     SELECT $1,m.id,$3,$4,$5,$6,$7 FROM members m
      WHERE m.workspace_id=$1 AND m.id=ANY($2::uuid[]) AND m.archived_at IS NULL ON CONFLICT DO NOTHING`,
-    [ws, ids, note.kind, note.en, note.ar, note.link, note.dedupe, actor]);
+    [ws, ids, note.kind, JSON.stringify({ en: note.en, ar: note.ar }), note.link, note.dedupe, actor]);
 }
 
 /** Everyone on the agency side who looks after one project: the account manager, the delivery lead and the assigned specialists. */

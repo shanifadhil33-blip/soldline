@@ -10,9 +10,9 @@ export async function clientRecords(db:SqlConnection,member:Member) {
   // RLS and an explicit company predicate both protect every client collection.
   const company=member.roles.includes('client_reviewer')?member.client_company_id:null;
   if(member.roles.includes('client_reviewer')&&!company)return {runs:[],inputs:[],deliverables:[]};
-  const runs=(await db.query<{id:string;name:string}>(`SELECT r.id,d.name FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE r.workspace_id=$1 AND ($2::uuid IS NULL OR d.client_company_id=$2) ORDER BY d.name`,[member.workspace_id,company])).rows;
+  const runs=(await db.query<{id:string;name:string;client:string}>(`SELECT r.id,d.name,c.name AS client FROM runs r JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id JOIN client_companies c ON c.workspace_id=d.workspace_id AND c.id=d.client_company_id WHERE r.workspace_id=$1 AND ($2::uuid IS NULL OR d.client_company_id=$2) ORDER BY d.name`,[member.workspace_id,company])).rows;
   const ids=runs.map(r=>r.id);
-  const inputs=(await db.query<{id:string;run_id:string;label:string;status:string}>('SELECT id,run_id,label,status FROM onboarding_inputs WHERE run_id=ANY($1::uuid[]) ORDER BY id',[ids])).rows;
+  const inputs=(await db.query<{id:string;run_id:string;label:string;status:string;sent:boolean}>("SELECT id,run_id,label,status,(evidence->>'sent_at') IS NOT NULL AS sent FROM onboarding_inputs WHERE run_id=ANY($1::uuid[]) ORDER BY (status='missing') DESC,id",[ids])).rows;
   const deliverables=(await db.query<{id:string;run_id:string;title:string;status:string;due:string|null;again:boolean}>(`SELECT t.task_id AS id,t.run_id,s.title,CASE WHEN lower(t.status)='client review' AND t.client_approved_at>=coalesce(t.review_since,t.observed_at) THEN 'approved' ELSE t.status END AS status,t.due_at AS due,EXISTS(SELECT 1 FROM recovery_items x WHERE x.workspace_id=t.workspace_id AND x.run_id=t.run_id AND x.kind='client_changes:'||t.task_id AND x.status='resolved') AS again FROM monitor_tasks t LEFT JOIN scope_items s ON s.workspace_id=t.workspace_id AND s.id=t.scope_item_id WHERE t.run_id=ANY($1::uuid[]) ORDER BY (lower(t.status)='client review') DESC,t.task_id`,[ids])).rows;
   return {runs,inputs,deliverables};
 }
@@ -112,6 +112,20 @@ export function trustStore(owner:TransactionDriver) {
       });
     },
     /** The client asks for changes with a note. It becomes a fix for the delivery lead and the specialist hears about it too. */
+    /** The client says they have sent something. The agency still confirms it arrived. */
+    async markInputSent(member:Member,id:string) {
+      return owner.transaction(async db=>{
+        const actor=await identity(db,member);if(!actor||!actor.roles.includes('client_reviewer'))return {status:404};
+        const row=(await db.query<{run_id:string;label:string|null;status:string;company:string}>("SELECT i.run_id,i.label,i.status,d.client_company_id AS company FROM onboarding_inputs i JOIN runs r ON r.workspace_id=i.workspace_id AND r.id=i.run_id JOIN deals d ON d.workspace_id=r.workspace_id AND d.id=r.deal_id WHERE i.workspace_id=$1 AND i.id=$2 FOR UPDATE OF i",[actor.workspace_id,id])).rows[0];
+        if(!row||row.company!==actor.client_company_id)return {status:404};
+        if(row.status!=='missing')return {status:409};
+        await db.query("UPDATE onboarding_inputs SET evidence=coalesce(evidence,'{}'::jsonb)||jsonb_build_object('sent_at',now(),'sent_by',$3::text) WHERE workspace_id=$1 AND id=$2",[actor.workspace_id,id,actor.id]);
+        await append(db,actor.workspace_id,{action:'input_sent',outcome:'succeeded',target_type:'run',target_id:row.run_id,after:{input_id:id,title:row.label}});
+        const title=row.label??'';
+        await tellMembers(db,actor.workspace_id,await agencyPeopleFor(db,actor.workspace_id,row.run_id),{kind:'client_step',en:sentence('en','inputSent',{name:actor.display_name,title}),ar:sentence('ar','inputSent',{name:actor.display_name,title}),link:`/runs/${row.run_id}?tab=inputs`,dedupe:`input_sent:${id}`});
+        return {status:200,title};
+      });
+    },
     async requestChanges(member:Member,id:string,note:string,guard=assertCan) {
       return owner.transaction(async db=>{
         const actor=await identity(db,member);if(!actor)return {status:404};

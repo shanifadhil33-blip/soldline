@@ -14,7 +14,7 @@ export function staleText(reason:string|undefined,locale:Language) {
   return m.stale.replace('{what}',what).replace('{when}',when).replace(/ +\./g,'.');
 }
 export function ApprovalCard({approval:a,locale,onRefresh,names={}}:{approval:Approval & {canDecide?: boolean};locale:Language;onRefresh:()=>Promise<void>;names?:Record<string,string>}) {
-  const m=loadMessages(locale).screens;
+  const m=loadMessages(locale).screens,f=loadMessages(locale).flow.approval;const email=a.kind==='client_email';
   const [clock,setClock]=useState<number|null>(null),[busy,setBusy]=useState(false),[mode,setMode]=useState<'reject'|'change'|null>(null),[reason,setReason]=useState(''),[result,setResult]=useState('');
   useEffect(()=>{const tick=()=>setClock(Date.now());tick();const interval=setInterval(tick,1000);return ()=>clearInterval(interval);},[]);
   const expires=new Date(a.expires_at).getTime(),expired=clock===null||clock>=expires;
@@ -37,7 +37,7 @@ export function ApprovalCard({approval:a,locale,onRefresh,names={}}:{approval:Ap
   const allowed=a.canDecide!==false;
   const systemLabel=(system:string)=>system==='clickup'?'ClickUp':system==='hubspot'?'HubSpot':system==='soldline'?'Soldline':m.tabs.emails;
   return <section className="approval-card" aria-label={m.approval} data-approval-id={a.id} data-sheet={a.status === 'pending' && allowed ? 'true' : undefined}>
-    <h2>{m.approval}</h2><p>{m.statuses[a.status as keyof typeof m.statuses]??m.none}</p>
+    <h2>{email?f.emailTitle:f.planTitle}</h2><p>{m.statuses[a.status as keyof typeof m.statuses]??m.none}</p>
     <span className="sample-badge">{m.reversibility[a.reversibility]}</span>
     {a.status==='stale'&&<p role="alert" className="stale-notice">{staleText(a.stale_reason as string|undefined,locale)}</p>}
     <div className="approval-effects">{a.payload.effects.map((effect,i)=>{
@@ -54,10 +54,9 @@ export function ApprovalCard({approval:a,locale,onRefresh,names={}}:{approval:Ap
         return <div key={j} className="effect-record">{title&&<p>{title}</p>}{rows.map(row=><dl className="field-diff" key={row.field}><div><dt>{m.fields[row.field as keyof typeof m.fields]??row.field.replaceAll('_',' ')}</dt><dd>{[row.before,row.after].filter(Boolean).join(', ')}</dd></div></dl>)}</div>;
       })}{Object.keys(effect.amounts).length>0&&<div><h3>{m.amounts}</h3>{Object.entries(effect.amounts).map(([key,n])=><p key={key}>{key}: {formatNumber(n,locale)}</p>)}</div>}{effect.message&&<div className="full-message"><h3>{m.message}</h3><p>{m.to}: {effect.message.to.join(', ')}</p><p>{m.subject}: {demoPhrase(effect.message.subject,locale)}</p><p>{demoPhrase(effect.message.body,locale)}</p></div>}</section>;
     })}</div>
-    <p>{m.expires}: <time dateTime={a.expires_at} suppressHydrationWarning>{clock===null?m.loading:date(a.expires_at)}</time></p>
-    <p>{m.remaining}: {clock===null?m.loading:formatNumber(Math.max(0,Math.ceil((expires-clock)/1000)),locale)}</p>
-    {allowed?<div className="screen-toolbar"><button className="button primary" disabled={busy||expired||a.status!=='pending'} onClick={()=>act('decide')}>{m.approve}</button><button className="button" disabled={busy||expired||a.status!=='pending'} onClick={()=>setMode('change')}>{m.change}</button><button className="button" disabled={busy||expired||a.status!=='pending'} onClick={()=>setMode('reject')}>{m.reject}</button></div>:<p role="status">{m.noPermission}</p>}
-    {mode&&<form onSubmit={e=>{e.preventDefault();void act('decide','reject');}}>{mode==='change'&&<p>{m.changeHelp}</p>}<label>{m.reason}<textarea required value={reason} onChange={e=>setReason(e.target.value)}/></label><button className="button" disabled={busy}>{mode==='change'?m.submitChange:m.reject}</button></form>}
+    <p>{f.decideBy}: <time dateTime={a.expires_at} suppressHydrationWarning>{clock===null?m.loading:date(a.expires_at)}</time></p>
+    {allowed?<div className="screen-toolbar"><button className="button primary" disabled={busy||expired||a.status!=='pending'} onClick={()=>act('decide')}>{email?f.approveEmail:f.approvePlan}</button><button className="button" disabled={busy||expired||a.status!=='pending'} onClick={()=>setMode('change')}>{f.askChanges}</button><button className="button" disabled={busy||expired||a.status!=='pending'} onClick={()=>setMode('reject')}>{m.reject}</button></div>:<p role="status">{m.noPermission}</p>}
+    {mode&&<form onSubmit={e=>{e.preventDefault();void act('decide','reject');}}>{mode==='change'&&<p>{m.changeHelp}</p>}<label>{m.reason}<textarea required value={reason} onChange={e=>setReason(e.target.value)}/></label><button className="button" disabled={busy}>{mode==='change'?f.sendChanges:m.reject}</button></form>}
     {allowed&&a.status==='approved'&&a.reversibility==='irreversible'&&!a.confirmed_at&&<button className="button" disabled={busy||expired} onClick={()=>act('confirm')}>{m.confirm}</button>}
     {allowed&&a.status==='approved'&&<button className="button primary" disabled={busy||expired||(a.reversibility==='irreversible'&&!a.confirmed_at)} onClick={()=>act('execute')}>{m.execute}</button>}
     {result&&<p role="status">{result}</p>}

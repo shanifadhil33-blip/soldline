@@ -170,7 +170,8 @@
       "noOwner": "No owner for {0}.",
       "noInput": "No {0} yet.",
       "notReceived": "{0} not received",
-      "addLines": "Add the {0} missing line items in HubSpot"
+      "addLines": "Add the {0} missing line items in HubSpot",
+      "changesAsked": "{0} asked for changes to {1}"
     }
   },
   "preferences": {
@@ -233,7 +234,9 @@
       "findings": "Findings",
       "clickup": "ClickUp",
       "emails": "Emails",
-      "history": "History"
+      "history": "History",
+      "tasks": "Tasks",
+      "messages": "Messages"
     },
     "source": "Source",
     "quote": "Quote",
@@ -293,7 +296,7 @@
       "waiting_approval": "Waiting for approval",
       "not_started": "Not started",
       "in_progress": "In progress",
-      "client_review": "In review",
+      "client_review": "Ready for review",
       "executing": "Setting up",
       "partly_done": "Partly done",
       "ready": "Ready",
@@ -315,7 +318,9 @@
       "block": "Blocked",
       "info": "For review",
       "closed": "Closed",
-      "complete": "Done"
+      "complete": "Done",
+      "changes_requested": "Changes asked",
+      "to_do": "To do"
     },
     "changed": {
       "hubspot": "HubSpot deal changed",
@@ -370,8 +375,8 @@
     "saved": "Saved",
     "refused": "Soldline refused this request",
     "recovery": "Fixes",
-    "note": "Resolution note",
-    "noteRequired": "Write a note before resolving this item",
+    "note": "What did you do to fix it?",
+    "noteRequired": "Write a note first",
     "choose": "Choose an item",
     "done": "Decision recorded",
     "undo": "Undo",
@@ -379,7 +384,7 @@
     "undoReady": "Reversal approval requested",
     "options": {
       "retry_now": "Retry now",
-      "resolve_with_note": "Resolve with note",
+      "resolve_with_note": "Mark as fixed",
       "cancel_remaining": "Cancel remaining",
       "reconcile": "Reconcile"
     },
@@ -680,5 +685,105 @@
   "team": {
     "agency": "Agency",
     "clients": "Clients"
+  },
+  "flow": {
+    "failed": "That did not work. Please try again.",
+    "notify": {
+      "approved": "{name} approved {title}",
+      "changes": "{name} asked for changes to {title}",
+      "again": "{title} is ready for your review again",
+      "inputSent": "{name} sent {title}",
+      "doneTask": "{title} is ready for review"
+    },
+    "today": {
+      "tasks": "Your tasks",
+      "clientNews": "From your clients",
+      "done": "Done",
+      "doneToast": "{title} is done. The client can review it now.",
+      "dueOn": "Due {date}",
+      "waitingFor": "Waiting for {name}"
+    },
+    "bell": {
+      "label": "Notifications",
+      "labelNew": "Notifications, {n} new",
+      "title": "Notifications",
+      "empty": "Nothing new"
+    },
+    "menu": {
+      "switchPerson": "Switch person",
+      "signOut": "Sign out"
+    },
+    "client": {
+      "sentToast": "Thanks. The agency has been told you sent {title}.",
+      "ready": "Ready for your review",
+      "sent": "Sent, waiting for the agency",
+      "markSent": "Mark as sent",
+      "noInputs": "Nothing is needed from you right now.",
+      "preparing": "Your agency is still preparing {client}'s work. You will see it here."
+    },
+    "deliverable": {
+      "untitled": "Deliverable",
+      "readyAgain": "Ready for your review again",
+      "ready": "Ready for your review",
+      "stateApproved": "Approved",
+      "stateChanges": "Changes asked",
+      "monthly": "every month",
+      "weekly": "every week",
+      "once": "one time",
+      "changesToast": "Your note about {title} was sent. The agency will fix it and send it back.",
+      "approvedToast": "You approved {title}. The agency has been told.",
+      "failed": "That did not work. Please try again.",
+      "backClient": "Back to Home",
+      "backStaff": "Back to Today",
+      "due": "due {date}",
+      "preview": "Preview",
+      "whatWasMade": "What was made",
+      "amount": "{n} {cadence}",
+      "project": "Project",
+      "madeBy": "Made by",
+      "agreed": "What was agreed",
+      "history": "What happened",
+      "asked": "{name} asked for changes",
+      "fixed": "Fixed and sent back",
+      "beingFixed": "The agency is working on this.",
+      "decision": "Your decision",
+      "askHelp": "Approve it if it is right, or ask for changes and say what to fix.",
+      "approve": "Approve",
+      "askChanges": "Ask for changes",
+      "noteLabel": "What should change?",
+      "noteRequired": "Write what should change.",
+      "sendNote": "Send to the agency",
+      "complete": "Handover complete",
+      "completeClient": "You approved this work. Nothing else is needed.",
+      "completeAgency": "{name} approved this work.",
+      "waitingTitle": "With the client",
+      "waitingFor": "Waiting for {name} to review.",
+      "beingFixedClient": "The agency is fixing this and will send it back to you.",
+      "beingFixedAgency": "Fix it, then mark the fix as done on the Fixes page to send it back.",
+      "inProgress": "Being made",
+      "inProgressClient": "This is not ready yet. You will be told when it is ready to review.",
+      "inProgressAgency": "Not ready yet. Mark it done when the work is finished."
+    },
+    "fixes": {
+      "sentBack": "Marked as fixed and sent back to the client for review.",
+      "resolved": "Marked as fixed.",
+      "theyWrote": "The client wrote:",
+      "sendBack": "Mark as fixed and send back"
+    },
+    "run": {
+      "receivedToast": "{title} is marked as received.",
+      "sentByClient": "Sent by the client",
+      "confirmReceived": "Confirm received",
+      "noMessages": "No messages to review."
+    },
+    "approval": {
+      "planTitle": "Plan to approve",
+      "emailTitle": "Email to approve",
+      "approvePlan": "Approve plan",
+      "approveEmail": "Approve email",
+      "askChanges": "Ask for changes",
+      "sendChanges": "Send changes",
+      "decideBy": "Decide by"
+    }
   }
 }

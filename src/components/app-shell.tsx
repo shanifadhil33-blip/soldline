@@ -7,11 +7,13 @@ import { demoPeople, demoHome, startDemo, type DemoPersona } from '../lib/demo-p
 import { capitalise } from '../lib/plain';
 import { LanguageLink } from './language-link';
 import { AgentChat } from './agent-chat';
-import { staffNavigation, staffTabs, reviewerTabs, navPaths, activeTab, activeSidebar, type NavKey } from '../lib/navigation';
+import { NotificationBell } from './notification-bell';
+import { ToastProvider } from './toast';
+import { staffNavigation, staffTabs, reviewerTabs, limitedNavigation, limitedTabs, navPaths, activeTab, activeSidebar, type NavKey } from '../lib/navigation';
 
-export function AppShell({ children, locale, workspace, name, isDemo, reviewer, persona, recoveryCount = 0 }: {
+export function AppShell({ children, locale, workspace, name, isDemo, reviewer, limited = false, persona, recoveryCount = 0 }: {
   children: React.ReactNode; locale: Language; workspace: string; name: string;
-  isDemo: boolean; reviewer: boolean; persona?: DemoPersona; recoveryCount?: number;
+  isDemo: boolean; reviewer: boolean; limited?: boolean; persona?: DemoPersona; recoveryCount?: number;
 }) {
   const m = loadMessages(locale); const path = usePathname(); const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -23,8 +25,8 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
   const [busy, setBusy] = useState(false); const [error, setError] = useState(false);
   // The tab the person just pressed shows as active at once, before the next screen has arrived.
   const [pending, setPending] = useState<{ key: NavKey; from: string } | null>(null);
-  const navigation: readonly NavKey[] = reviewer ? reviewerTabs : staffNavigation;
-  const tabs: readonly NavKey[] = reviewer ? reviewerTabs : staffTabs;
+  const navigation: readonly NavKey[] = reviewer ? reviewerTabs : limited ? limitedNavigation : staffNavigation;
+  const tabs: readonly NavKey[] = reviewer ? reviewerTabs : limited ? limitedTabs : staffTabs;
   const shownTab = pending && pending.from === path ? pending.key : activeTab(path, reviewer);
   const shownSide = pending && pending.from === path ? activeSidebar(navPaths[pending.key], reviewer) : activeSidebar(path, reviewer);
   const person = capitalise(name);
@@ -59,7 +61,12 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
     </Link>;
   }
   const home = reviewer ? '/home' : '/today';
-  return <div className="app-frame">
+  async function signOut() {
+    setBusy(true);
+    try { await fetch('/api/sign-out', { method: 'POST', headers: { Accept: 'application/json' } }); } catch { /* The cookie is cleared by the next visit if this fails. */ }
+    window.location.href = '/';
+  }
+  return <ToastProvider><div className="app-frame">
     <a className="skip-link" href="#content">{m.common.skip}</a>
     <aside className="app-sidebar"><Link className="brand" href={home}>{m.common.brand}</Link><nav aria-label={m.common.navigation}>{navigation.map(key => navLink(key))}</nav><span className="sidebar-person">{person}</span></aside>
     <div className="app-column">
@@ -67,6 +74,7 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
         <div className="workspace-heading"><strong>{workspace}</strong>{isDemo && <span className="muted">{m.shell.sample}</span>}</div>
         <div className="header-actions">
           <button type="button" className="chip-button agent-open" onClick={() => setAgent(true)}><svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v9H10l-4 3.5V15H5z" /></svg><span>{m.screens.agent}</span></button>
+          <NotificationBell locale={locale} />
           <div className="account" ref={menuRoot}>
             <button type="button" ref={menuButton} className="account-button" aria-haspopup="menu" aria-expanded={menu} aria-label={`${m.shell.account}: ${person}`} onClick={() => setMenu(open => !open)}>
               {persona ? <img src={`/people/${persona}.svg`} alt="" width={32} height={32} /> : <span className="initial" aria-hidden="true">{person.charAt(0)}</span>}
@@ -75,14 +83,16 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
             </button>
             {menu && <div className="account-menu" role="menu" aria-label={m.shell.account}>
               <p className="account-who"><strong>{person}</strong>{isDemo && <span className="muted">{m.shell.sample}</span>}</p>
-              {isDemo && <><p className="account-label" id="view-as">{m.shell.persona}</p>
+              {isDemo && <><p className="account-label" id="view-as"><strong>{m.flow.menu.switchPerson}</strong></p>
                 <div role="group" aria-labelledby="view-as">{demoPeople.map(item => <button type="button" role="menuitemradio" aria-checked={item.id === persona} disabled={busy} key={item.id} className="menu-row" onClick={() => item.id === persona ? setMenu(false) : void switchPersona(item.id)}>
                   <img src={`/people/${item.id}.svg`} alt="" width={32} height={32} /><span>{m.demo.people[item.id]}</span>{item.id === persona && <svg className="check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
                 </button>)}</div></>}
               <div className="menu-divider" />
               <LanguageLink locale={locale} path={path} menu />
+              {reviewer && <Link className="menu-row" role="menuitem" href="/settings">{m.nav.settings}</Link>}
               <Link className="menu-row" role="menuitem" href="/feedback">{m.nav.feedback}</Link>
               {isDemo && <button type="button" role="menuitem" className="menu-row" disabled={busy} onClick={() => { setMenu(false); setError(false); setConfirming(true); dialog.current?.showModal(); }}>{m.shell.reset}</button>}
+              <button type="button" role="menuitem" className="menu-row strong" disabled={busy} onClick={() => void signOut()}>{m.flow.menu.signOut}</button>
             </div>}
           </div>
         </div>
@@ -93,7 +103,7 @@ export function AppShell({ children, locale, workspace, name, isDemo, reviewer, 
     <AgentChat locale={locale} open={agent} onClose={closeAgent} firstName={firstName} />
     <nav className="phone-tabs" aria-label={m.common.navigation}>{tabs.map(key => navLink(key, true))}</nav>
     {isDemo && <dialog ref={dialog} onClose={() => setConfirming(false)} className="reset-dialog" aria-labelledby="reset-title" aria-describedby="reset-body"><h2 id="reset-title">{m.shell.confirmTitle}</h2><p id="reset-body">{m.shell.confirmBody}</p>{error && <p role="alert">{m.shell.error}</p>}<div className="dialog-actions"><button className="button" disabled={busy} onClick={() => dialog.current?.close()}>{m.common.cancel}</button><button className="button primary" disabled={busy} onClick={() => { if (persona) void switchPersona(persona); }}>{m.shell.resetConfirm}</button></div></dialog>}
-  </div>;
+  </div></ToastProvider>;
 }
 
 function TabIcon({ name }: { name: string }) {

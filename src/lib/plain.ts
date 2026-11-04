@@ -27,6 +27,7 @@ const phrasePatterns: [RegExp, string][] = [
   [/^No (.+) yet\.$/, 'noInput'],
   [/^(.+) not received$/, 'notReceived'],
   [/^Add the (.+) missing line items in HubSpot$/, 'addLines'],
+  [/^(.+) asked for changes to (.+)$/, 'changesAsked'],
 ];
 
 export function demoPhrase(text: string, locale: Language): string {
@@ -37,6 +38,7 @@ export function demoPhrase(text: string, locale: Language): string {
   if (table[text]) return table[text];
   for (const [pattern, key] of phrasePatterns) {
     const match = text.match(pattern);
+    if (match && key === 'changesAsked') return (demo.templates as Record<string, string>)[key].replace('{0}', personName(match[1], locale)).replace('{1}', demoPhrase(match[2], locale));
     if (match) return (demo.templates as Record<string, string>)[key].replace('{0}', demoPhrase(match[1], locale));
   }
   return text.split(/(\s*,\s*)/).map(part => table[part] ?? part).join('');
@@ -89,4 +91,11 @@ export function plainPlace(location: string, locale: Language): string | null {
 
 export function shouldRunAfterApprove(reversibility: string, message: string): boolean {
   return reversibility !== 'irreversible' && message !== 'Another approval is needed';
+}
+
+/** A notification is stored with both languages when it was written by Soldline; older plain text is shown as it is. */
+export function noteText(body: string | null | undefined, locale: Language): string {
+  if (!body) return '';
+  if (!body.startsWith('{')) return body;
+  try { const parsed = JSON.parse(body) as { en?: string; ar?: string }; return parsed[locale] ?? parsed.en ?? ''; } catch { return body; }
 }

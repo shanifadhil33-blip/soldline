@@ -3,6 +3,9 @@ export const navPaths = { today: '/today', runs: '/runs', recovery: '/recovery',
 export type NavKey = keyof typeof navPaths;
 
 export const staffTabs = ['today', 'runs', 'recovery', 'audit', 'more'] as const satisfies readonly NavKey[];
+/** A specialist sees their own work, the projects they are on and their fixes. */
+export const limitedNavigation = ['today', 'runs', 'recovery', 'settings'] as const satisfies readonly NavKey[];
+export const limitedTabs = ['today', 'runs', 'recovery', 'more'] as const satisfies readonly NavKey[];
 export const reviewerTabs = ['home', 'inputs'] as const satisfies readonly NavKey[];
 /** Pages reached from the More tab on a phone. */
 export const morePages = ['/more', '/connections', '/templates', '/team', '/settings', '/feedback'] as const;

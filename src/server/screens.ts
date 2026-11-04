@@ -21,3 +21,12 @@ export type TeamRow = { name: string; roles: string[]; company: string | null };
 export async function readTeam(db: SqlConnection): Promise<TeamRow[]> {
   return (await db.query<TeamRow>(`SELECT m.display_name AS name, m.roles, c.name AS company FROM members m LEFT JOIN client_companies c ON c.id=m.client_company_id AND c.workspace_id=m.workspace_id WHERE m.archived_at IS NULL ORDER BY (m.client_company_id IS NOT NULL), m.display_name`)).rows;
 }
+
+/** Pages that only the agency can open send a client back to their own Home instead of showing an error. */
+export async function staffOnly(allowSpecialist = true) {
+  const member = await getMemberFromCookies();
+  if (!member) redirect('/sign-in');
+  if (member.roles.includes('client_reviewer')) redirect('/home');
+  if (!allowSpecialist && member.roles.length === 1 && member.roles[0] === 'contributor') redirect('/today');
+  return member;
+}

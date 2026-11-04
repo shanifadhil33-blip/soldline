@@ -170,7 +170,8 @@
       "noOwner": "لا يوجد مسؤول عن {0}.",
       "noInput": "لا يوجد {0} بعد.",
       "notReceived": "{0} لم يصل",
-      "addLines": "أضف البنود الناقصة ({0}) في HubSpot"
+      "addLines": "أضف البنود الناقصة ({0}) في HubSpot",
+      "changesAsked": "طلب {0} تعديلات على {1}"
     }
   },
   "preferences": {
@@ -233,7 +234,9 @@
       "findings": "النتائج",
       "clickup": "ClickUp",
       "emails": "الرسائل",
-      "history": "السجل"
+      "history": "السجل",
+      "tasks": "المهام",
+      "messages": "الرسائل"
     },
     "source": "المصدر",
     "quote": "الاقتباس",
@@ -293,7 +296,7 @@
       "waiting_approval": "تنتظر الموافقة",
       "not_started": "لم يبدأ",
       "in_progress": "قيد التنفيذ",
-      "client_review": "قيد المراجعة",
+      "client_review": "جاهز للمراجعة",
       "executing": "قيد التجهيز",
       "partly_done": "مكتملة جزئيا",
       "ready": "جاهزة",
@@ -315,7 +318,9 @@
       "block": "متوقفة",
       "info": "للمراجعة",
       "closed": "مغلقة",
-      "complete": "منجزة"
+      "complete": "منجزة",
+      "changes_requested": "طُلبت تعديلات",
+      "to_do": "للبدء"
     },
     "changed": {
       "hubspot": "تغيرت صفقة HubSpot",
@@ -370,8 +375,8 @@
     "saved": "تم الحفظ",
     "refused": "رفض Soldline هذا الطلب",
     "recovery": "الإصلاحات",
-    "note": "ملاحظة الحل",
-    "noteRequired": "اكتب ملاحظة قبل حل هذا العنصر",
+    "note": "ما الذي فعلته لإصلاحه؟",
+    "noteRequired": "اكتب ملاحظة أولًا",
     "choose": "اختر عنصرا",
     "done": "تم تسجيل القرار",
     "undo": "تراجع",
@@ -379,7 +384,7 @@
     "undoReady": "تم طلب موافقة التراجع",
     "options": {
       "retry_now": "أعد المحاولة الآن",
-      "resolve_with_note": "حل مع ملاحظة",
+      "resolve_with_note": "تحديد كمُصلح",
       "cancel_remaining": "إلغاء المتبقي",
       "reconcile": "مطابقة"
     },
@@ -680,5 +685,105 @@
   "team": {
     "agency": "الوكالة",
     "clients": "العملاء"
+  },
+  "flow": {
+    "failed": "لم ينجح ذلك. حاول مرة أخرى.",
+    "notify": {
+      "approved": "وافق {name} على {title}",
+      "changes": "طلب {name} تعديلات على {title}",
+      "again": "{title} جاهز لمراجعتك مرة أخرى",
+      "inputSent": "أرسل {name} {title}",
+      "doneTask": "{title} جاهز للمراجعة"
+    },
+    "today": {
+      "tasks": "مهامك",
+      "clientNews": "من عملائك",
+      "done": "تم",
+      "doneToast": "تم إنجاز {title}. يمكن للعميل مراجعته الآن.",
+      "dueOn": "الموعد {date}",
+      "waitingFor": "بانتظار {name}"
+    },
+    "bell": {
+      "label": "الإشعارات",
+      "labelNew": "الإشعارات، {n} جديد",
+      "title": "الإشعارات",
+      "empty": "لا يوجد جديد"
+    },
+    "menu": {
+      "switchPerson": "تبديل الشخص",
+      "signOut": "تسجيل الخروج"
+    },
+    "client": {
+      "sentToast": "شكرًا. تم إبلاغ الوكالة بأنك أرسلت {title}.",
+      "ready": "جاهز لمراجعتك",
+      "sent": "تم الإرسال، بانتظار الوكالة",
+      "markSent": "تحديد كمرسل",
+      "noInputs": "لا يوجد شيء مطلوب منك الآن.",
+      "preparing": "وكالتك ما زالت تجهز عمل {client}. ستراه هنا."
+    },
+    "deliverable": {
+      "untitled": "عمل مسلّم",
+      "readyAgain": "جاهز لمراجعتك مرة أخرى",
+      "ready": "جاهز لمراجعتك",
+      "stateApproved": "تمت الموافقة",
+      "stateChanges": "طُلبت تعديلات",
+      "monthly": "كل شهر",
+      "weekly": "كل أسبوع",
+      "once": "مرة واحدة",
+      "changesToast": "تم إرسال ملاحظتك عن {title}. ستصلحه الوكالة وتعيده إليك.",
+      "approvedToast": "وافقت على {title}. تم إبلاغ الوكالة.",
+      "failed": "لم ينجح ذلك. حاول مرة أخرى.",
+      "backClient": "العودة إلى الرئيسية",
+      "backStaff": "العودة إلى اليوم",
+      "due": "الموعد {date}",
+      "preview": "معاينة",
+      "whatWasMade": "ما تم إنجازه",
+      "amount": "{n} {cadence}",
+      "project": "المشروع",
+      "madeBy": "أنجزه",
+      "agreed": "ما تم الاتفاق عليه",
+      "history": "ما حدث",
+      "asked": "طلب {name} تعديلات",
+      "fixed": "تم الإصلاح والإرجاع",
+      "beingFixed": "الوكالة تعمل على ذلك.",
+      "decision": "قرارك",
+      "askHelp": "وافق إذا كان صحيحًا، أو اطلب تعديلات واذكر ما يجب إصلاحه.",
+      "approve": "موافقة",
+      "askChanges": "طلب تعديلات",
+      "noteLabel": "ما الذي يجب تغييره؟",
+      "noteRequired": "اكتب ما يجب تغييره.",
+      "sendNote": "إرسال إلى الوكالة",
+      "complete": "اكتمل التسليم",
+      "completeClient": "وافقت على هذا العمل. لا يلزم شيء آخر.",
+      "completeAgency": "وافق {name} على هذا العمل.",
+      "waitingTitle": "عند العميل",
+      "waitingFor": "بانتظار مراجعة {name}.",
+      "beingFixedClient": "الوكالة تصلح هذا وستعيده إليك.",
+      "beingFixedAgency": "أصلحه، ثم حدد الإصلاح كمنجز في صفحة الإصلاحات لإعادته.",
+      "inProgress": "قيد الإنجاز",
+      "inProgressClient": "هذا غير جاهز بعد. سيتم إبلاغك عندما يصبح جاهزًا للمراجعة.",
+      "inProgressAgency": "غير جاهز بعد. حدده كمنجز عند انتهاء العمل."
+    },
+    "fixes": {
+      "sentBack": "تم تحديده كمُصلح وإرساله إلى العميل للمراجعة.",
+      "resolved": "تم تحديده كمُصلح.",
+      "theyWrote": "كتب العميل:",
+      "sendBack": "تحديد كمُصلح وإرجاعه"
+    },
+    "run": {
+      "receivedToast": "تم تحديد {title} كمستلم.",
+      "sentByClient": "أرسله العميل",
+      "confirmReceived": "تأكيد الاستلام",
+      "noMessages": "لا توجد رسائل للمراجعة."
+    },
+    "approval": {
+      "planTitle": "خطة للموافقة",
+      "emailTitle": "رسالة للموافقة",
+      "approvePlan": "الموافقة على الخطة",
+      "approveEmail": "الموافقة على الرسالة",
+      "askChanges": "طلب تعديلات",
+      "sendChanges": "إرسال التعديلات",
+      "decideBy": "القرار قبل"
+    }
   }
 }
