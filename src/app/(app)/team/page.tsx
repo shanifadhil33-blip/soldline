@@ -2,9 +2,10 @@ import { getLanguage } from '../../../lib/locale';
 import { loadMessages } from '../../../lib/i18n';
 import { demoPhrase, personName } from '../../../lib/plain';
 import { demoPeople } from '../../../lib/demo-personas';
-import { readTeam, screenData } from '../../../server/screens';
+import { readTeam, screenData, staffOnly } from '../../../server/screens';
 
 export default async function Page() {
+  await staffOnly(false);
   const locale = await getLanguage(), m = loadMessages(locale);
   const english = loadMessages('en').demo.people;
   const rows = await screenData(readTeam, 'team');

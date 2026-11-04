@@ -6,6 +6,7 @@ import { getAppDriver } from '../../../../server/db/runtime';
 import { withMember } from '../../../../server/db/withMember';
 import { ClientScreen } from '../../../../components/trust-screens';
 import { RunDetail } from '../../../../components/run-detail';
+import { readRunDetail } from '../../../../server/run-detail';
 import { ProjectGone } from '../../../../components/project-gone';
 export default async function Page({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{tab?:string}>}) {
   const {id}=await params;
@@ -18,6 +19,10 @@ export default async function Page({params,searchParams}:{params:Promise<{id:str
   if(!exists) return <ProjectGone locale={await getLanguage()}/>;
   if(member.roles.includes('client_reviewer'))return <ClientScreen locale={await getLanguage()}/>;
   const {tab}=await searchParams;
-  const initialTab=tab==='inputs'||tab==='findings'||tab==='clickup'||tab==='emails'||tab==='history'?tab:'plan';
-  return <RunDetail id={id} locale={await getLanguage()} initialTab={initialTab}/>;
+  const initialTab=tab==='inputs'||tab==='history'||tab==='tasks'||tab==='messages'?tab:tab==='clickup'?'tasks':tab==='emails'?'messages':'plan';
+  const locale=await getLanguage();
+  // The page opens already filled in; the screen only refreshes it afterwards.
+  const detail=await readRunDetail(member,id,locale);
+  const initial=detail.status===200?JSON.parse(JSON.stringify(detail.body)):null;
+  return <RunDetail id={id} locale={locale} initialTab={initialTab} initial={initial}/>;
 }

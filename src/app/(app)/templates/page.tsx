@@ -1,3 +1,4 @@
+import { staffOnly } from '../../../server/screens';
 import { getLanguage } from '../../../lib/locale';
 import { loadMessages } from '../../../lib/i18n';
 import { demoPhrase } from '../../../lib/plain';
@@ -11,6 +12,7 @@ const steps = [
 ];
 
 export default async function Page() {
+  await staffOnly(false);
   const locale = await getLanguage(), m = loadMessages(locale), t = m.templates;
   const say = (text: string) => demoPhrase(text, locale);
   return <section className="screen">

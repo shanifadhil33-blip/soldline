@@ -15,9 +15,18 @@ export async function screenData<T>(read:(db:SqlConnection,member:Member)=>Promi
   return load();
 }
 export async function readRuns(db:SqlConnection):Promise<RunRow[]> {
-  return (await db.query<RunRow>(`SELECT r.id,w.is_demo,c.name AS client,d.name AS deal,r.status,r.won_at AS won,r.ready_at AS ready,m.display_name AS owner FROM runs r JOIN workspaces w ON w.id=r.workspace_id JOIN deals d ON d.id=r.deal_id AND d.workspace_id=r.workspace_id JOIN client_companies c ON c.id=d.client_company_id AND c.workspace_id=d.workspace_id LEFT JOIN members m ON m.id=r.delivery_lead_id AND m.workspace_id=r.workspace_id ORDER BY r.created_at DESC,r.id`)).rows;
+  return (await db.query<RunRow>(`SELECT r.id,w.is_demo,coalesce(c.name,d.name) AS client,d.name AS deal,r.status,r.won_at AS won,r.ready_at AS ready,m.display_name AS owner FROM runs r JOIN workspaces w ON w.id=r.workspace_id JOIN deals d ON d.id=r.deal_id AND d.workspace_id=r.workspace_id LEFT JOIN client_companies c ON c.id=d.client_company_id AND c.workspace_id=d.workspace_id LEFT JOIN members m ON m.id=r.delivery_lead_id AND m.workspace_id=r.workspace_id ORDER BY r.created_at DESC,r.id`)).rows;
 }
 export type TeamRow = { name: string; roles: string[]; company: string | null };
 export async function readTeam(db: SqlConnection): Promise<TeamRow[]> {
   return (await db.query<TeamRow>(`SELECT m.display_name AS name, m.roles, c.name AS company FROM members m LEFT JOIN client_companies c ON c.id=m.client_company_id AND c.workspace_id=m.workspace_id WHERE m.archived_at IS NULL ORDER BY (m.client_company_id IS NOT NULL), m.display_name`)).rows;
+}
+
+/** Pages that only the agency can open send a client back to their own Home instead of showing an error. */
+export async function staffOnly(allowSpecialist = true) {
+  const member = await getMemberFromCookies();
+  if (!member) redirect('/sign-in');
+  if (member.roles.includes('client_reviewer')) redirect('/home');
+  if (!allowSpecialist && member.roles.length === 1 && member.roles[0] === 'contributor') redirect('/today');
+  return member;
 }

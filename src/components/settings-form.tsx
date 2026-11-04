@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { loadMessages, type Language } from '../lib/i18n';
 import { capitalise, clockFace } from '../lib/plain';
 import { Select } from './select';
@@ -14,6 +15,7 @@ function tidy(body: Personal, locale: Language, fallbackTime = '09:00'): Persona
 }
 
 export function SettingsForm({ locale, initial = null }: { locale: Language; initial?: Personal | null }) {
+  const router = useRouter();
   const m = loadMessages(locale).preferences;
   const common = loadMessages(locale).screens;
   const [form, setForm] = useState<Personal>(tidy(initial ?? {}, locale));
@@ -41,7 +43,7 @@ export function SettingsForm({ locale, initial = null }: { locale: Language; ini
         const body = tidy(await response.json() as Personal, locale, form.digestTime);
         setForm(body); setSaved(body);
         if (body.language === 'en' || body.language === 'ar') document.cookie = `soldline_language=${body.language};path=/;max-age=31536000;samesite=lax`;
-        setStatus(m.saved);
+        setStatus(m.saved); router.refresh();
         if (body.language && body.language !== locale) location.reload();
       } else { setStatus(''); setError(true); }
     } catch { setStatus(''); setError(true); } finally { setBusy(false); }

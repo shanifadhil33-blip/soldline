@@ -88,8 +88,8 @@ async function seedWaitingItems(db: SqlConnection, insert: Insert, c: { ws: stri
   await fix('omar', c.run, 'Add the four missing line items in HubSpot', 'The signed scope has 8 deliverables but the deal has 4 line items.');
   await fix('faisal', c.cedarRun, 'Reconnect the sample inbox', 'Simulated: the sample inbox key was revoked, so reminders are paused. Sample data.');
   await fix('ravi', c.run, 'Upload the brand style draft again', 'The first upload did not reach ClickUp.');
-  await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_brand', scope_item_id: c.scopeItemIds[0], status: 'client review', review_since: c.daysAgo(1), due_at: c.daysAgo(-2), assignee_ids: ['ravi'], observed_at: new Date().toISOString() });
-  await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_blog', scope_item_id: c.scopeItemIds[2], status: 'in progress', due_at: c.daysAgo(-1), assignee_ids: ['ravi'], observed_at: new Date().toISOString() });
+  await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_brand', scope_item_id: c.scopeItemIds[0], status: 'client review', review_since: c.daysAgo(1), due_at: c.daysAgo(-2), assignee_ids: ['42'], observed_at: new Date().toISOString() });
+  await insert('monitor_tasks', { run_id: c.run, task_id: 'sample_task_blog', scope_item_id: c.scopeItemIds[2], status: 'in progress', due_at: c.daysAgo(-1), assignee_ids: ['42'], observed_at: new Date().toISOString() });
   await db.query("SELECT set_config('app.member_id',$1,true)", [c.ids.omar]);
   await db.query('SELECT audit_append($1,$2::jsonb)', [c.ws, JSON.stringify({ action: 'event_processed', outcome: 'succeeded', target_type: 'run', target_id: c.run })]);
   await db.query("SELECT set_config('app.member_id',$1,true)", [c.ids.imran]);

@@ -93,11 +93,12 @@ it('Contributors read actual connection health without secrets',async()=>{
  mocks.member.mockResolvedValue(member('contributor'));const response=await connections(req());expect(response.status).toBe(200);const body=await response.json();expect(body.editable).toBe(false);expect(body.rows).toEqual([{provider:'mail',status:'needs_reconnect',scopes:null,allowed_actions:null}]);
 });
 
-it('Recovery reads only his open queue and preserves the stored allowed options',async()=>{
+it('Agency leads read every open fix, a specialist only theirs, and the stored allowed options are kept the stored allowed options',async()=>{
  const own=randomUUID(),other=randomUUID();
  for(const [id,owner] of [[own,f.lead],[other,f.manager]])await database.db.query("INSERT INTO recovery_items(id,workspace_id,run_id,owner_member_id,status,allowed_options) VALUES($1,$2,$3,$4,'open',ARRAY['resolve_with_note'])",[id,f.ws,f.runA,owner]);
  mocks.member.mockResolvedValue(member('delivery_lead'));
- const body=await(await recovery(req(),ctx())).json();expect(body.rows.map((r:{id:string})=>r.id)).toEqual([own]);expect(body.rows[0].allowed_options).toEqual(['resolve_with_note']);expect(body.rows[0].reversible).toBe(false);
+ const body=await(await recovery(req(),ctx())).json();const ids=body.rows.map((r:{id:string})=>r.id);expect(ids).toContain(own);expect(ids).toContain(other);const mine=body.rows.find((r:{id:string})=>r.id===own);expect(mine.allowed_options).toEqual(['resolve_with_note']);expect(mine.reversible).toBe(false);expect(mine.can_resolve).toBe(true);expect(body.rows.find((r:{id:string})=>r.id===other).can_resolve).toBe(false);
+ mocks.member.mockResolvedValue(member('contributor'));const theirs=await(await recovery(req(),ctx())).json();expect(theirs.rows.map((r:{id:string})=>r.id)).not.toContain(other);
 });
 
 it('Client approval survives another monitor observation and a new review cycle needs approval again',async()=>{

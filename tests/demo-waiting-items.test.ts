@@ -37,8 +37,8 @@ it('Each staff person has something waiting in Today', async () => {
   const imran = await today('imran'), omar = await today('omar'), faisal = await today('faisal'), ravi = await today('ravi');
   expect(imran.approvals.length).toBe(1); expect(imran.owned.length).toBe(1); expect(imran.inputs.length).toBeGreaterThan(0); expect(imran.recovery.length).toBe(3);
   expect(omar.approvals.length).toBe(1); expect(omar.owned.length).toBe(1); expect(omar.recovery.length).toBe(3); expect(omar.inputs.length).toBe(2);
-  expect(faisal.approvals.length).toBe(2); expect(faisal.recovery.length).toBe(3);
-  expect(ravi.approvals.length).toBe(0); expect(ravi.recovery.length).toBe(2);
+  expect(faisal.approvals.length).toBe(1); expect(faisal.recovery.length).toBe(3);
+  expect(ravi.approvals.length).toBe(0); expect(ravi.recovery.length).toBe(1);
 });
 
 it('Clients see only their own company, with a review or an input waiting', async () => {

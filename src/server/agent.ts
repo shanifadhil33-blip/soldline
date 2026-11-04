@@ -8,6 +8,7 @@ import { assertCan, type Member } from './permissions';
 import { memberCopy, permittedData } from './backend-a5';
 import { demoPhrase } from '../lib/plain';
 import type { SqlConnection } from './db/withMember';
+import { directAnswer } from './agent-answer';
 export const cardDraft=z.object({action:z.enum(['approve_plan_correction','retry_recovery','client_reminder','scope_change']),approval:createSchema, recoveryId:z.uuid().optional()}).strict().superRefine((draft,ctx)=>{
   const a=draft.approval;
   const kind=draft.action==='scope_change'?'scope_change':draft.action==='client_reminder'?'client_email':'plan_correction';
@@ -41,12 +42,13 @@ export async function postMessage(db:SqlConnection,m:Member,input:z.infer<typeof
   const cap=Number.isInteger(configured)&&configured>=0?configured:20;
   await agentWording({question:input.message,data,memories},async()=>!!(await db.query<{ok:boolean}>('SELECT agent_reserve_ai($1) AS ok',[cap])).rows[0].ok);
   // Model text is not shown. The reply is the reviewed sentence for the active language.
-  const intro=c.summary;
-  const rows=Object.entries(data).map(([key,items])=>({label:c[key as keyof typeof c]??key,count:items.length,records:items.map(r=>{const raw=String(r.name??r.title??r.label??r.kind??r.status??'');return {id:r.id,name:input.language?demoPhrase(raw,input.language):raw,link:r.run_id?'/runs/'+r.run_id:key==='runs'?'/runs/'+r.id:'/inputs'};})}));
+  const direct=await directAnswer(db,m,input.message,input.language??'en');
+  const intro=direct?direct.text:c.summary;
+  const rows=direct?[]:Object.entries(data).map(([key,items])=>({label:c[key as keyof typeof c]??key,count:items.length,records:items.map(r=>{const raw=String(r.name??r.title??r.label??r.kind??r.status??'');return {id:r.id,name:input.language?demoPhrase(raw,input.language):raw,link:r.run_id?'/runs/'+r.run_id:key==='runs'?'/runs/'+r.id:'/inputs'};})}));
   const thread=input.threadId??(await db.query<{id:string}>('INSERT INTO agent_threads(workspace_id,member_id,title) VALUES($1,$2,$3) RETURNING id',[m.workspace_id,m.id,input.message.slice(0,80)])).rows[0].id;
-  await db.query("INSERT INTO agent_messages(workspace_id,member_id,thread_id,role,body) VALUES($1,$2,$3,'user',$4),($1,$2,$3,'agent',$5)",[m.workspace_id,m.id,thread,input.message,JSON.stringify({label:c.answered,intro,rows})]);
+  await db.query("INSERT INTO agent_messages(workspace_id,member_id,thread_id,role,body) VALUES($1,$2,$3,'user',$4),($1,$2,$3,'agent',$5)",[m.workspace_id,m.id,thread,input.message,JSON.stringify({label:c.answered,intro,rows,link:direct?.link})]);
   const card=input.card?(await db.query('INSERT INTO agent_cards(workspace_id,member_id,thread_id,draft) VALUES($1,$2,$3,$4) RETURNING id,revision,draft',[m.workspace_id,m.id,thread,JSON.stringify(input.card)])).rows[0]:null;
   const name=(await db.query<{agent_name:string}>('SELECT agent_name FROM members WHERE id=$1',[m.id])).rows[0].agent_name;
   const labels={approve_plan_correction:c.planCorrection,retry_recovery:c.retryRecovery,client_reminder:c.clientReminder,scope_change:c.scopeChange};
-  return {threadId:thread,agentName:name,label:c.answered,intro,rows,card:card&&input.card?{...card,label:labels[input.card.action],choices:{yes:c.yes,change:c.change}}:null};
+  return {threadId:thread,agentName:name,label:c.answered,intro,rows,link:direct?.link,card:card&&input.card?{...card,label:labels[input.card.action],choices:{yes:c.yes,change:c.change}}:null};
 }

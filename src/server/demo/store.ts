@@ -37,7 +37,7 @@ export function demoStore(owner: TransactionDriver) {
     },
     async member(ticket: DemoTicket): Promise<Member | null> {
       return owner.transaction(async db => {
-        const result = await db.query<Member & Record<string, unknown>>(`SELECT m.id,m.workspace_id,m.display_name,m.roles,m.client_company_id,w.is_demo FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE w.id=$1 AND w.is_demo=true AND w.demo_expires_at > now() AND m.preferred_name=$2 AND m.user_id IS NULL AND m.archived_at IS NULL`, [ticket.sandbox, ticket.persona]);
+        const result = await db.query<Member & Record<string, unknown>>(`SELECT m.id,m.workspace_id,m.display_name,m.roles,m.client_company_id,w.is_demo FROM members m JOIN workspaces w ON w.id=m.workspace_id WHERE w.id=$1 AND w.is_demo=true AND w.demo_expires_at > now() AND m.display_name=$2 AND m.user_id IS NULL AND m.archived_at IS NULL`, [ticket.sandbox, personas[ticket.persona].name]);
         return result.rows[0] ?? null;
       });
     },

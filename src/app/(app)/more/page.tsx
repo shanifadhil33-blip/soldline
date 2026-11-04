@@ -1,3 +1,4 @@
+import { staffOnly } from '../../../server/screens';
 import Link from 'next/link';
 import { getLanguage } from '../../../lib/locale';
 import { loadMessages } from '../../../lib/i18n';
@@ -12,8 +13,10 @@ const icons = {
 } as const;
 
 export default async function Page() {
+  const member = await staffOnly();
   const m = loadMessages(await getLanguage());
-  const keys = ['connections', 'templates', 'team', 'settings', 'feedback'] as const;
+  const limited = member.roles.length === 1 && member.roles[0] === 'contributor';
+  const keys = limited ? (['settings', 'feedback'] as const) : (['connections', 'templates', 'team', 'settings', 'feedback'] as const);
   return <section className="screen">
     <h1>{m.nav.more}</h1>
     <ul className="record-list more-list">{keys.map(key => <li key={key}><Link className="row-link" href={navPaths[key]} prefetch>
