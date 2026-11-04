@@ -46,15 +46,14 @@
     "runs": "المشاريع",
     "recovery": "الإصلاحات",
     "audit": "السجل",
-    "needs": "يحتاجك",
     "connections": "الاتصالات",
     "templates": "القوالب",
     "team": "الفريق",
     "settings": "الإعدادات",
-    "queue": "قائمة الانتظار",
     "more": "المزيد",
     "home": "الرئيسية",
-    "inputs": "المتطلبات"
+    "inputs": "المتطلبات",
+    "feedback": "أرسل ملاحظة"
   },
   "shell": {
     "sample": "بيانات تجريبية",
@@ -67,33 +66,22 @@
     "workspaceFallback": "مساحة عملي",
     "loading": "جارٍ فتح العرض التجريبي",
     "error": "تعذر فتح العرض التجريبي. حاول مجدداً.",
-    "moreLead": "الاتصالات والقوالب والفريق والإعدادات",
-    "account": "الحساب"
+    "account": "الحساب",
+    "moreHints": {
+      "connections": "HubSpot وClickUp وبريد الفريق",
+      "templates": "ما نطلبه من كل عميل جديد",
+      "team": "من في مساحة العمل",
+      "settings": "اسمك ولغتك واسمك في الردود",
+      "feedback": "أخبرنا بما نحسّنه"
+    }
   },
   "demo": {
     "title": "اختر طريقة العرض",
     "intro": "اطّلع على تسليم العمل من وجهة نظر كل شخص مسؤول عنه.",
     "fictional": "Northlight Studio وHarbor Coffee Roasters وCedar Line Furniture شركات خيالية.",
     "choose": "اختر شخصاً للبدء.",
-    "creating": "جارٍ إعداد العرض التجريبي",
-    "ready": "العرض التجريبي جاهز",
     "error": "تعذر بدء العرض التجريبي. حاول مجدداً.",
-    "open": "افتح مساحة العمل",
-    "seeNeeds": "انظر ما يحتاجك",
     "hello": "مرحباً {name}",
-    "opening": "جارٍ فتح العينة",
-    "welcomeStaff": "هذه عينة لتسليم واحد. ثلاث ضغطات توضح المسار.",
-    "welcomeReviewer": "هذه العينة هي التسليم بانتظار مراجعتك.",
-    "seeHandover": "انظر التسليم",
-    "stepsStaff": ["انظر ما يحتاجك", "افتح مشروع هاربور", "اقرأ السجل"],
-    "stepsReviewer": ["انظر التسليم", "راجع ما يزال ناقصاً", "أرسل ما نحتاجه"],
-    "guide": "مسار قصير",
-    "guideStep": "الخطوة {n} من {total}",
-    "tourNext": "التالي",
-    "tourDone": "حسناً",
-    "tourSkip": "تخطى",
-    "tourStaff": ["هذا الزر يفتح العمل الذي ينتظرك.", "المشاريع هي مكان عقد محمصة هاربور.", "السجل يحفظ كل تغيير في هذه العينة."],
-    "tourReviewer": ["هذا الزر يفتح التسليم.", "الرئيسية تعرض العمل قيد المراجعة.", "المتطلبات تجمع ما يزال ناقصاً."],
     "roles": {
       "admin": "مدير الوكالة",
       "account_manager": "مدير الحساب",
@@ -153,7 +141,36 @@
       "Sample inbox": "صندوق العينة",
       "Two items we still need from you": "بندين ما زلنا نحتاجهما منك",
       "Hi Karim, we still need the brand guide files and Meta ad account access to start. Sample email, not sent.": "مرحبا كريم، ما زلنا نحتاج ملفات دليل الهوية والوصول إلى حساب ميتا للبدء. بريد عينة، لم يُرسل.",
-      "Simulated, no live connection. Sample data.": "محاكاة، بلا اتصال مباشر. بيانات نموذجية."
+      "Simulated, no live connection. Sample data.": "محاكاة، بلا اتصال مباشر. بيانات نموذجية.",
+      "No matching line item": "لا يوجد بند مطابق",
+      "Client inputs": "مدخلات العميل",
+      "HubSpot line items": "بنود HubSpot",
+      "Delivery plan": "خطة التسليم",
+      "Team inbox": "صندوق الفريق",
+      "Onboarding inputs": "مدخلات البدء",
+      "Signed scope page 1": "الصفحة 1 من النطاق الموقّع",
+      "Signed scope page 3": "الصفحة 3 من النطاق الموقّع",
+      "Meta account access": "الوصول إلى حساب ميتا",
+      "Hello Karim. Please share Meta account access before launch. Thank you, Omar.": "مرحباً كريم. يرجى مشاركة الوصول إلى حساب ميتا قبل الإطلاق. شكراً لك، عمر.",
+      "Cedar launch design": "تصميم إطلاق سيدار",
+      "Cedar brand files": "ملفات هوية سيدار",
+      "Review delivery note": "راجع ملاحظة التسليم",
+      "Retry delivery work": "أعد محاولة عمل التسليم",
+      "Check sent mail": "افحص البريد المرسل",
+      "Cancel remaining work": "ألغِ العمل المتبقي",
+      "Review the recorded issue before continuing": "راجع المشكلة المسجلة قبل المتابعة",
+      "run": "المشروع"
+    },
+    "openingAs": "جارٍ الفتح باسم {name}",
+    "templates": {
+      "noLine": "لا يوجد بند في HubSpot لـ {0}.",
+      "noScope": "لا يوجد عمل موقّع لـ {0}.",
+      "quantity": "الكمية تختلف في {0}.",
+      "cadence": "الجدول يختلف في {0}.",
+      "noOwner": "لا يوجد مسؤول عن {0}.",
+      "noInput": "لا يوجد {0} بعد.",
+      "notReceived": "{0} لم يصل",
+      "addLines": "أضف البنود الناقصة ({0}) في HubSpot"
     }
   },
   "preferences": {
@@ -167,16 +184,13 @@
     "feedbackHint": "ملاحظتك",
     "feedbackSend": "أرسل الملاحظة",
     "english": "English",
-    "arabic": "العربية"
-  },
-  "empty": {
-    "title": "لا يوجد شيء آخر هنا",
-    "body": "اختر صفحة أخرى من القائمة."
+    "arabic": "العربية",
+    "feedbackThanks": "شكراً لك. نقرأ كل ملاحظة.",
+    "feedbackLead": "الملاحظات القصيرة أنفع. أخبرنا بما نحسّنه."
   },
   "screens": {
     "needsAction": "يحتاجك",
     "noPermission": "لا يمكنك الموافقة على هذا. الشخص المناسب ما زال هو من يقرر.",
-    "ask": "اسأل عن هذا العمل",
     "askHint": "سؤالك",
     "askSend": "إرسال",
     "agent": "الوكيل",
@@ -188,10 +202,10 @@
     "oldInputs": "مدخلات متأخرة",
     "allClear": "لا شيء ينتظر هنا",
     "metrics": [
-      "عمليات",
-      "موافقات",
-      "عوائق",
-      "ساعات"
+      "المشاريع",
+      "الموافقات",
+      "يحتاج إصلاحاً أولاً",
+      "الساعات"
     ],
     "columns": [
       "العميل",
@@ -342,7 +356,11 @@
       "cadence_differs": "يختلف الجدول",
       "missing_input": "مدخل مفقود",
       "no_owner": "لا يوجد مسؤول"
-    }
+    },
+    "decideBy": "القرار قبل {date}",
+    "won": "تم البيع في {date}",
+    "opened": "فُتح في {date}",
+    "asked": "طُلب في {date}"
   },
   "trust": {
     "loading": "جار التحميل",
@@ -366,18 +384,18 @@
       "reconcile": "مطابقة"
     },
     "audit": "السجل",
-    "chainOk": "تم فحص سلسلة التدقيق: متصلة",
-    "chainBroken": "سلسلة التدقيق منقطعة عند القيد {id}",
+    "chainOk": "تم فحص السجل: لم يتغير شيء",
+    "chainBroken": "في السجل فجوة عند القيد {id}",
     "actor": "الفاعل",
     "action": "الإجراء",
     "outcome": "النتيجة",
-    "run": "التشغيل",
+    "run": "المشروع",
     "date": "التاريخ",
     "apply": "تطبيق",
     "all": "الكل",
     "denied": "مرفوض",
     "event": "حدث",
-    "roles": "المسميات وقت الحدث",
+    "roles": "المسمى وقت الحدث",
     "connections": "الاتصالات",
     "providers": {
       "hubspot": "HubSpot",
@@ -390,7 +408,7 @@
       "paused": "متوقف مؤقتا",
       "revoked": "يحتاج إعادة اتصال"
     },
-    "scopes": "الصلاحيات",
+    "scopes": "الوصول",
     "mayDo": "ما يمكن أن يفعله Soldline",
     "pause": "إيقاف مؤقت",
     "resume": "استئناف",
@@ -433,13 +451,13 @@
     "notFoundBody": "أُعيد ضبط هذه العينة، أو أن الصفحة ليست في هذا العرض.",
     "homeLink": "اذهب إلى اليوم",
     "controls": "أدوات العرض",
-    "backend": "فحص الخادم",
+    "backend": "فحص الصلاحيات",
     "tryRavi": "حاول الاعتماد باسم رافي",
-    "request": "الطلب",
-    "requestLabel": "POST اعتماد الخطة باسم رافي",
-    "response": "حالة الاستجابة",
+    "request": "ما جرت محاولته",
+    "requestLabel": "اعتماد الخطة باسم رافي",
+    "response": "النتيجة",
     "message": "الرسالة",
-    "auditRow": "قيد التدقيق",
+    "auditRow": "قيد السجل",
     "eventActions": {
       "approve_plan": "اعتماد الخطة",
       "read_audit": "قراءة التدقيق",
@@ -460,7 +478,12 @@
       "succeeded": "نجح",
       "failed": "فشل"
     },
-    "agent": "Agent"
+    "agent": "الوكيل",
+    "homeLinkClient": "اذهب إلى الرئيسية",
+    "startLink": "اذهب إلى الصفحة الرئيسية",
+    "goneTitle": "هذا المشروع غير موجود",
+    "goneBody": "ربما أُعيد ضبط هذه العينة. افتح المشاريع لترى ما هو موجود الآن.",
+    "goneLink": "اذهب إلى المشاريع"
   },
   "legal": {
     "privacyLink": "الخصوصية",
@@ -619,5 +642,43 @@
     "sample": "نموذج لم يتم إرساله",
     "retryQueued": "تمت جدولة إعادة المحاولة",
     "sampleInbox": "صندوق وارد نموذجي"
+  },
+  "welcome": {
+    "lead": {
+      "action": "راجع خطة هاربور",
+      "lead": "محمصة هاربور بانتظار موافقتك."
+    },
+    "worker": {
+      "action": "افتح عملك",
+      "lead": "مهامك لمحمصة هاربور في صفحة اليوم."
+    },
+    "reviewer": {
+      "action": "راجع التسليم",
+      "lead": "شاركت وكالتك هذا التسليم لتراجعه."
+    }
+  },
+  "agentChat": {
+    "hello": "مرحباً {name}. اسألني عن مشاريعك وإصلاحاتك وموافقاتك.",
+    "placeholder": "اسأل الوكيل",
+    "stop": "إيقاف",
+    "close": "إغلاق",
+    "typing": "الوكيل يكتب",
+    "done": "تم. لم يتغير شيء آخر.",
+    "changed": "حسناً. أخبرني بما تريد تغييره.",
+    "quick": [
+      "ما الذي يحتاجني اليوم؟",
+      "أي المشاريع يحتاج إصلاحاً أولاً؟"
+    ]
+  },
+  "templates": {
+    "lead": "ما يستخدمه Soldline لتحويل الصفقة الموقعة إلى خطة.",
+    "checklist": "ما نطلبه من كل عميل جديد",
+    "checklistHint": "ست أشياء نجمعها قبل بدء العمل.",
+    "steps": "كيف يصبح العمل المباع مهاماً",
+    "stepsHint": "كل عمل مباع يدخل قائمة واحدة ولكل منه مسؤول واحد."
+  },
+  "team": {
+    "agency": "الوكالة",
+    "clients": "العملاء"
   }
 }

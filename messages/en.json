@@ -46,15 +46,14 @@
     "runs": "Projects",
     "recovery": "Fixes",
     "audit": "History",
-    "needs": "Needs you",
     "connections": "Connections",
     "templates": "Templates",
     "team": "Team",
     "settings": "Settings",
-    "queue": "Queue",
     "more": "More",
     "home": "Home",
-    "inputs": "Inputs"
+    "inputs": "Inputs",
+    "feedback": "Send feedback"
   },
   "shell": {
     "sample": "Sample data",
@@ -67,33 +66,22 @@
     "workspaceFallback": "My workspace",
     "loading": "Opening the demo",
     "error": "We could not open the demo. Please try again.",
-    "moreLead": "Connections, templates, team and settings",
-    "account": "Account"
+    "account": "Account",
+    "moreHints": {
+      "connections": "HubSpot, ClickUp and the team inbox",
+      "templates": "What every new client is asked for",
+      "team": "Who is in this workspace",
+      "settings": "Your name, language and reply name",
+      "feedback": "Tell us what to improve"
+    }
   },
   "demo": {
     "title": "Choose your view",
     "intro": "Open the same handover as the person responsible for it. No sign up.",
     "fictional": "Northlight Studio, Harbor Coffee Roasters and Cedar Line Furniture are fictional.",
     "choose": "Choose a person to start.",
-    "creating": "Creating your demo",
-    "ready": "Your demo is ready",
     "error": "We could not start the demo. Please try again.",
-    "open": "Open workspace",
-    "seeNeeds": "See what needs you",
     "hello": "Hello {name}",
-    "opening": "Opening your sample",
-    "welcomeStaff": "This sample follows one handover. Three taps show the path.",
-    "welcomeReviewer": "This sample is the handover waiting for your review.",
-    "seeHandover": "See the handover",
-    "stepsStaff": ["See what needs you", "Open the Harbor project", "Read the history"],
-    "stepsReviewer": ["See the handover", "Check what is still missing", "Send the items we need"],
-    "guide": "A short path",
-    "guideStep": "Step {n} of {total}",
-    "tourNext": "Next",
-    "tourDone": "Got it",
-    "tourSkip": "Skip",
-    "tourStaff": ["This button opens the work waiting for you.", "Projects is where Harbor Coffee Roasters lives.", "History keeps every change in this sample."],
-    "tourReviewer": ["This button opens the handover.", "Home shows the work in review.", "Inputs lists what is still missing."],
     "roles": {
       "admin": "Agency director",
       "account_manager": "Account manager",
@@ -153,7 +141,36 @@
       "Sample inbox": "Sample inbox",
       "Two items we still need from you": "Two items we still need from you",
       "Hi Karim, we still need the brand guide files and Meta ad account access to start. Sample email, not sent.": "Hi Karim, we still need the brand guide files and Meta ad account access to start. Sample email, not sent.",
-      "Simulated, no live connection. Sample data.": "Simulated, no live connection. Sample data."
+      "Simulated, no live connection. Sample data.": "Simulated, no live connection. Sample data.",
+      "No matching line item": "No matching line item",
+      "Client inputs": "Client inputs",
+      "HubSpot line items": "HubSpot line items",
+      "Delivery plan": "Delivery plan",
+      "Team inbox": "Team inbox",
+      "Onboarding inputs": "Onboarding inputs",
+      "Signed scope page 1": "Signed scope page 1",
+      "Signed scope page 3": "Signed scope page 3",
+      "Meta account access": "Meta account access",
+      "Hello Karim. Please share Meta account access before launch. Thank you, Omar.": "Hello Karim. Please share Meta account access before launch. Thank you, Omar.",
+      "Cedar launch design": "Cedar launch design",
+      "Cedar brand files": "Cedar brand files",
+      "Review delivery note": "Review delivery note",
+      "Retry delivery work": "Retry delivery work",
+      "Check sent mail": "Check sent mail",
+      "Cancel remaining work": "Cancel remaining work",
+      "Review the recorded issue before continuing": "Review the recorded issue before continuing",
+      "run": "Project"
+    },
+    "openingAs": "Opening as {name}",
+    "templates": {
+      "noLine": "No HubSpot line item for {0}.",
+      "noScope": "No signed scope item for {0}.",
+      "quantity": "Quantity differs for {0}.",
+      "cadence": "Schedule differs for {0}.",
+      "noOwner": "No owner for {0}.",
+      "noInput": "No {0} yet.",
+      "notReceived": "{0} not received",
+      "addLines": "Add the {0} missing line items in HubSpot"
     }
   },
   "preferences": {
@@ -167,16 +184,13 @@
     "feedbackHint": "Your note",
     "feedbackSend": "Send note",
     "english": "English",
-    "arabic": "Arabic"
-  },
-  "empty": {
-    "title": "Nothing else here",
-    "body": "Choose another page from the menu."
+    "arabic": "Arabic",
+    "feedbackThanks": "Thank you. We read every note.",
+    "feedbackLead": "Short notes help most. Tell us what to improve."
   },
   "screens": {
     "needsAction": "Needs you",
     "noPermission": "You cannot approve this. The right person still has to decide.",
-    "ask": "Ask about this work",
     "askHint": "Your question",
     "askSend": "Send",
     "agent": "Agent",
@@ -188,9 +202,9 @@
     "oldInputs": "Old missing inputs",
     "allClear": "Nothing waiting here",
     "metrics": [
-      "Runs",
+      "Projects",
       "Approvals",
-      "Blocks",
+      "Needs fixing first",
       "Hours"
     ],
     "columns": [
@@ -212,7 +226,7 @@
     "approval": "Approval",
     "timeline": "Timeline",
     "findings": "Findings",
-    "planDiff": "Plan diff",
+    "planDiff": "Plan changes",
     "tabs": {
       "plan": "Plan",
       "inputs": "Inputs",
@@ -342,7 +356,11 @@
       "cadence_differs": "Schedule differs",
       "missing_input": "Missing input",
       "no_owner": "No owner"
-    }
+    },
+    "decideBy": "Decide by {date}",
+    "won": "Won {date}",
+    "opened": "Opened {date}",
+    "asked": "Asked {date}"
   },
   "trust": {
     "loading": "Loading",
@@ -366,18 +384,18 @@
       "reconcile": "Reconcile"
     },
     "audit": "History",
-    "chainOk": "Audit chain checked: unbroken",
-    "chainBroken": "Audit chain broken at entry {id}",
+    "chainOk": "History checked: nothing was changed",
+    "chainBroken": "History has a gap at entry {id}",
     "actor": "Actor",
     "action": "Action",
     "outcome": "Outcome",
-    "run": "Run",
+    "run": "Project",
     "date": "Date",
     "apply": "Apply",
     "all": "All",
     "denied": "Denied",
     "event": "Event",
-    "roles": "Titles at event time",
+    "roles": "Job title then",
     "connections": "Connections",
     "providers": {
       "hubspot": "HubSpot",
@@ -390,7 +408,7 @@
       "paused": "Paused",
       "revoked": "Needs reconnect"
     },
-    "scopes": "Scopes",
+    "scopes": "Access",
     "mayDo": "What Soldline may do",
     "pause": "Pause",
     "resume": "Resume",
@@ -433,13 +451,13 @@
     "notFoundBody": "This sample was reset, or the page is not in this view.",
     "homeLink": "Go to Today",
     "controls": "Demo controls",
-    "backend": "Backend check",
+    "backend": "Permission check",
     "tryRavi": "Try approving as Ravi",
-    "request": "Request",
-    "requestLabel": "POST Approve plan as Ravi",
-    "response": "Response status",
+    "request": "What was tried",
+    "requestLabel": "Approve plan as Ravi",
+    "response": "Result",
     "message": "Message",
-    "auditRow": "Audit row",
+    "auditRow": "History entry",
     "eventActions": {
       "approve_plan": "Approve plan",
       "read_audit": "Read audit",
@@ -460,7 +478,12 @@
       "succeeded": "Succeeded",
       "failed": "Failed"
     },
-    "agent": "Agent"
+    "agent": "Agent",
+    "homeLinkClient": "Go to Home",
+    "startLink": "Go to the start page",
+    "goneTitle": "This project is not here",
+    "goneBody": "This sample may have been reset. Open Projects to see what is there now.",
+    "goneLink": "Go to Projects"
   },
   "legal": {
     "privacyLink": "Privacy",
@@ -619,5 +642,43 @@
     "sample": "Sample, not sent",
     "retryQueued": "Retry queued",
     "sampleInbox": "Sample inbox"
+  },
+  "welcome": {
+    "lead": {
+      "action": "Review Harbor's plan",
+      "lead": "Harbor Coffee Roasters is waiting for your approval."
+    },
+    "worker": {
+      "action": "Open your work",
+      "lead": "Your tasks for Harbor Coffee Roasters are on Today."
+    },
+    "reviewer": {
+      "action": "Review your handover",
+      "lead": "Your agency shared this handover for you to check."
+    }
+  },
+  "agentChat": {
+    "hello": "Hi {name}. Ask me about your projects, fixes and approvals.",
+    "placeholder": "Ask Agent",
+    "stop": "Stop",
+    "close": "Close",
+    "typing": "Agent is writing",
+    "done": "Done. Nothing else changed.",
+    "changed": "Okay. Tell me what to change.",
+    "quick": [
+      "What needs me today?",
+      "Which projects need fixing first?"
+    ]
+  },
+  "templates": {
+    "lead": "What Soldline uses to turn a signed deal into a plan.",
+    "checklist": "What we ask every new client",
+    "checklistHint": "Six things to collect before work can start.",
+    "steps": "How sold work becomes tasks",
+    "stepsHint": "Each sold item lands in one list with one owner."
+  },
+  "team": {
+    "agency": "Agency",
+    "clients": "Clients"
   }
 }
