@@ -8,6 +8,7 @@ import { useToast } from './toast';
 import { ProjectGone } from './project-gone';
 import { DetailSkeleton } from './skeletons';
 import { ApprovalCard } from './approval-card';
+import { formatDate } from '../lib/format-date';
 type Finding={id:string;title:string;evidence:Record<string,unknown>|Record<string,unknown>[]|null};
 type Detail={run:{id:string;status:string;plan:{tasks?:{title:string;owner:string;due:string}[]}|null};title:string;findings:Finding[];inputs:{id:string;label:string;status:string}[];items:{key:string;title:string;source_quote:string}[];approvals:Approval[];history:{id:string;at:string;action:string;actor_name_at_event:string;outcome:string}[];members:{id:string;display_name:string;clickup_user_id:string|null}[];isDemo:boolean};
 type Tasks={tasks:{id:string;name:string;assignees?:({id:number;username?:string}|number)[];due_date?:string;status?:{status:string}}[];readAt:string};
@@ -25,7 +26,7 @@ export function RunDetail({id,locale,initialTab='plan',initial=null}:{id:string;
   useEffect(()=>{let active=true;void fetch(`/api/runs/${id}`,{cache:'no-store'}).then(async response=>{if(response.status===404){if(active)setGone(true);return;}if(!response.ok)throw new Error();const body=await response.json();if(active)setData(localizeDetail(body,locale));}).catch(()=>{if(active)setError(m.error);});const timer=setInterval(()=>{void refresh().catch(()=>setError(m.error));},5000);return ()=>{active=false;clearInterval(timer);};},[id,locale,refresh,m.error]);
   useEffect(()=>{if(tab!=='tasks')return;let active=true;void fetch(`/api/runs/${id}/tasks`,{cache:'no-store'}).then(async r=>{if(!r.ok)throw new Error();const body=await r.json();if(active)setTasks(body);}).catch(()=>{if(active)setTasks(null);});return ()=>{active=false;};},[tab,id]);
   function select(value:Tab) {setError('');setTasks(null);setTab(value);const url=new URL(location.href);url.searchParams.set('tab',value);history.replaceState(null,'',url);}
-  const date=(value:string)=>new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium',timeStyle:'short'}).format(new Date(value));
+  const date=(value:string)=>formatDate(value,locale,'short');
   async function confirmInput(inputId:string,label:string) {setBusy(true);try{const r=await fetch(`/api/inputs/${inputId}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});if(!r.ok)throw new Error();toast(f.run.receivedToast.replace('{title}',demoPhrase(label,locale)));await refresh();}catch{setError(m.error);}finally{setBusy(false);}}
   if(gone)return <ProjectGone locale={locale}/>;
   if(!data)return error?<p role="alert">{error}</p>:<DetailSkeleton/>;

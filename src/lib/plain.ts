@@ -1,5 +1,6 @@
 import { demoPeople } from './demo-personas';
 import { loadMessages, type Language } from './i18n';
+import { formatDate } from './format-date';
 
 export function clockFace(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -68,7 +69,7 @@ export function plainValue(field: string, value: unknown, locale: Language, name
   if (value == null || value === '') return null;
   if (field === 'due_date') {
     const stamp = typeof value === 'number' ? value : typeof value === 'string' && /^\d{12,}$/.test(value) ? Number(value) : Number.NaN;
-    if (Number.isFinite(stamp)) return new Intl.DateTimeFormat(`${locale}-u-nu-latn`, { dateStyle: 'medium' }).format(new Date(stamp));
+    if (Number.isFinite(stamp)) return formatDate(stamp, locale);
   }
   if (field === 'assignees' && Array.isArray(value)) {
     const labels = value.map(item => names[String(item)] ?? '').filter(Boolean);

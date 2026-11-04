@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { loadMessages, type Language } from '../lib/i18n';
 import { demoPhrase, personName, statusWord } from '../lib/plain';
 import { useToast } from './toast';
+import { formatDate } from '../lib/format-date';
 
 export type DeliverableData = {
   id: string; run_id: string; title: string | null; status: string; due: string | null; project: string; client: string;
@@ -23,7 +24,7 @@ export function DeliverableDetail({ data, locale }: { data: DeliverableData; loc
   const [invalid, setInvalid] = useState(false);
   const [busy, setBusy] = useState(false);
   const title = demoPhrase(data.title ?? '', locale) || m.untitled;
-  const day = (value: string) => new Intl.DateTimeFormat(`${locale}-u-nu-latn`, { dateStyle: 'medium' }).format(new Date(value));
+  const day = (value: string) => formatDate(value, locale);
   const state = data.status.toLowerCase();
   const stateText = state === 'approved' ? m.stateApproved : state === 'client review' ? (data.again ? m.readyAgain : m.ready) : state === 'changes requested' ? m.stateChanges : state === 'complete' ? m.stateApproved : statusWord(data.status, locale);
   const cadence = data.cadence === 'monthly' ? m.monthly : data.cadence === 'weekly' ? m.weekly : m.once;

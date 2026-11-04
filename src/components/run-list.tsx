@@ -2,9 +2,10 @@ import Link from 'next/link';
 import type { RunRow } from '../server/screens';
 import { loadMessages, type Language } from '../lib/i18n';
 import { demoPhrase, personName, statusWord } from '../lib/plain';
+import { formatDate } from '../lib/format-date';
 export function RunList({ runs, locale }: { runs: RunRow[]; locale: Language }) {
   const m = loadMessages(locale).screens;
-  const date = (value: string | null) => value ? new Intl.DateTimeFormat(`${locale}-u-nu-latn`, { dateStyle: 'medium' }).format(new Date(value)) : m.none;
+  const date = (value: string | null) => value ? formatDate(value, locale) : m.none;
   const owner = (run: RunRow) => run.owner ? personName(run.owner, locale) : m.unassigned;
   const text = (value: string, demo: boolean) => demo ? demoPhrase(value, locale) : value;
   const status = (run: RunRow) => run.status ? statusWord(run.status, locale) : m.none;
