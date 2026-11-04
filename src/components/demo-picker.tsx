@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadMessages, type Language } from '../lib/i18n';
 import { demoPeople, startDemo, type DemoPersona } from '../lib/demo-personas';
@@ -11,12 +11,13 @@ export function DemoPicker({ locale }: { locale: Language }) {
   const router = useRouter();
   const [state, setState] = useState<'choose' | 'creating' | 'error'>('choose');
   const [selected, setSelected] = useState<DemoPersona | null>(null);
-  useEffect(() => { router.prefetch('/welcome'); }, [router]);
   async function choose(persona: DemoPersona) {
     setSelected(persona);
     setState('creating');
     try {
       await startDemo(persona);
+      // Drop any screen the router fetched before the cookie existed (those answers were sign-in redirects).
+      router.refresh();
       router.push('/welcome');
     } catch {
       setState('error');

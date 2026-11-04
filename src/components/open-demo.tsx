@@ -14,6 +14,7 @@ export function OpenDemo({ locale }: { locale: Language }) {
     setError(false);
     try {
       await startDemo('imran');
+      router.refresh();
       router.push('/welcome');
     } catch {
       setError(true);
