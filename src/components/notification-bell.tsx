@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadMessages, formatNumber, type Language } from '../lib/i18n';
 import { noteText } from '../lib/plain';
+import { formatDate } from '../lib/format-date';
 
 type Note = { id: string; body: string | null; link: string | null; read_at: string | null; created_at: string };
 
@@ -44,7 +45,7 @@ export function NotificationBell({ locale }: { locale: Language }) {
       }
     }
   }
-  const day = (value: string) => new Intl.DateTimeFormat(`${locale}-u-nu-latn`, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  const day = (value: string) => formatDate(value, locale, 'short');
   return <div className="bell" ref={root}>
     <button type="button" className="bell-button" aria-haspopup="dialog" aria-expanded={open} aria-label={unread > 0 ? m.labelNew.replace('{n}', String(unread)) : m.label} onClick={() => void toggle()}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17h12l-1.5-2v-4a4.5 4.5 0 00-9 0v4zM10 20h4" /></svg>

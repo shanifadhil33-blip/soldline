@@ -3,6 +3,7 @@ import { useEffect,useState } from 'react';
 import type { Approval } from '../server/approvals/model';
 import { loadMessages,formatNumber,type Language } from '../lib/i18n';
 import { demoPhrase, plainPlace, plainValue, shouldRunAfterApprove } from '../lib/plain';
+import { formatDate } from '../lib/format-date';
 export function staleText(reason:string|undefined,locale:Language) {
   const m=loadMessages(locale).screens;
   const match=reason?.match(/^(.*?) (?:changed when checked at|changed at|when checked at) (.*)$/);
@@ -10,7 +11,7 @@ export function staleText(reason:string|undefined,locale:Language) {
   const translations:Record<string,string>={'HubSpot deal changed':m.changed.hubspot,'HubSpot line item changed':m.changed.hubspot_line_item,'Scope version changed':m.changed.scope,'ClickUp target list changed':m.changed.clickup};
   const what=translations[raw]??raw;
   const observed=match?.[2]?new Date(match[2]):null;
-  const when=observed&&Number.isFinite(observed.getTime()) ? new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium',timeStyle:'medium'}).format(observed) : match?.[2]??'';
+  const when=observed&&Number.isFinite(observed.getTime()) ? formatDate(observed,locale,'medium') : match?.[2]??'';
   return m.stale.replace('{what}',what).replace('{when}',when).replace(/ +\./g,'.');
 }
 export function ApprovalCard({approval:a,locale,onRefresh,names={}}:{approval:Approval & {canDecide?: boolean};locale:Language;onRefresh:()=>Promise<void>;names?:Record<string,string>}) {
@@ -18,7 +19,7 @@ export function ApprovalCard({approval:a,locale,onRefresh,names={}}:{approval:Ap
   const [clock,setClock]=useState<number|null>(null),[busy,setBusy]=useState(false),[mode,setMode]=useState<'reject'|'change'|null>(null),[reason,setReason]=useState(''),[result,setResult]=useState('');
   useEffect(()=>{const tick=()=>setClock(Date.now());tick();const interval=setInterval(tick,1000);return ()=>clearInterval(interval);},[]);
   const expires=new Date(a.expires_at).getTime(),expired=clock===null||clock>=expires;
-  const date=(value:string)=>new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium',timeStyle:'medium'}).format(new Date(value));
+  const date=(value:string)=>formatDate(value,locale,'medium');
   async function act(operation:'decide'|'confirm'|'execute',decision:'approve'|'reject'='approve') {
     if(busy)return;
     if(decision==='reject'&&!reason.trim()){setResult(m.reasonRequired);return;}

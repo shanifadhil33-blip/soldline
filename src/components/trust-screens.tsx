@@ -6,6 +6,7 @@ import { demoPhrase, personName, statusWord } from '../lib/plain';
 import { Select } from './select';
 import { RowsSkeleton } from './skeletons';
 import { useToast } from './toast';
+import { formatDate } from '../lib/format-date';
 type Copy=ReturnType<typeof loadMessages>['trust'];
 function useRead<T>(url:string|null) {
   const [data,setData]=useState<T|null>(null),[failed,setFailed]=useState(false),[refused,setRefused]=useState(false);
@@ -53,7 +54,7 @@ export function AuditScreen({locale,initialFilters={},refusedOnServer=false}:{lo
       <label>{m.date}<input name="date" type="date" defaultValue={filters.date??''}/></label><button className="button" type="submit">{m.apply}</button>
     </form>
     <ul className="record-list audit-rows">{rows?.map(row=>{const h=all.flow.history as Record<string,string>;const who=row.actor_name_at_event?personName(row.actor_name_at_event,locale):h.soldline;const project=row.project?demoPhrase(row.project,locale):h.project;const title=typeof row.after?.title==='string'?demoPhrase(row.after.title,locale):project;const line=(h[row.action]??h.other).replace('{name}',who).replace('{project}',project).replace('{title}',title);
-      return <li key={row.id} data-audit-id={row.id} className={row.outcome==='denied'?'denied-row':undefined}><div className="row-text"><strong>{line}{row.outcome==='denied'?` (${m.outcomes.denied})`:''}</strong><span className="muted">{new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium',timeStyle:'short'}).format(new Date(row.at))}{row.run_id&&row.project?<>{' · '}<Link href={`/runs/${row.run_id}`}>{project}</Link></>:null}</span></div></li>;})}</ul>{!rows?.length&&<p>{m.empty}</p>}
+      return <li key={row.id} data-audit-id={row.id} className={row.outcome==='denied'?'denied-row':undefined}><div className="row-text"><strong>{line}{row.outcome==='denied'?` (${m.outcomes.denied})`:''}</strong><span className="muted">{formatDate(row.at,locale,'short')}{row.run_id&&row.project?<>{' · '}<Link href={`/runs/${row.run_id}`}>{project}</Link></>:null}</span></div></li>;})}</ul>{!rows?.length&&<p>{m.empty}</p>}
   </>}</section>;
 }
 export function ConnectionsScreen({locale}:{locale:Language}) {
@@ -79,7 +80,7 @@ export function ClientScreen({locale,inputsOnly=false}:{locale:Language;inputsOn
   const [retryAction,setRetryAction]=useState<(()=>void)|null>(null);
   async function sent(id:string,title:string){setRetryAction(()=>()=>void sent(id,title));setBusy(true);setError(false);try{const response=await fetch(`/api/inputs/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sent:true})});if(!response.ok)throw new Error();toast(f.client.sentToast.replace('{title}',title));await read();}catch{setError(true);}finally{setBusy(false);}}
   const chip=(d:ClientData['deliverables'][number])=>{const state=d.status.toLowerCase();return state==='approved'||state==='complete'?m.approved:state==='client review'?(d.again?f.deliverable.readyAgain:f.client.ready):state==='changes requested'?f.deliverable.stateChanges:statusWord(d.status,locale);};
-  const day=(value?:string|null)=>value?new Intl.DateTimeFormat(`${locale}-u-nu-latn`,{dateStyle:'medium'}).format(new Date(value)):'';
+  const day=(value?:string|null)=>value?formatDate(value,locale):'';
   const inputsList=data&&<><ul className="record-list">{data.inputs.map(i=><li key={i.id}><div className="row-text"><strong>{demoPhrase(i.label,locale)||m.inputs}</strong><span className="muted">{clientRunName(data.runs,i.run_id,locale)}</span></div><span className="status-chip">{i.status==='received'?m.received:i.sent?f.client.sent:m.missing}</span>{i.status!=='received'&&!i.sent&&<button className="button primary" disabled={busy} onClick={()=>sent(i.id,demoPhrase(i.label,locale))}>{f.client.markSent}</button>}</li>)}</ul>{!data.inputs.length&&<p className="muted">{f.client.noInputs}</p>}</>;
   const company=data?.runs[0]?demoPhrase(data.runs[0].client??data.runs[0].name,locale):'';
   return <section className="screen"><h1>{inputsOnly?m.inputs:m.home}</h1>{failed&&<ErrorState m={m} retry={read}/>} {!data&&!failed&&<RowsSkeleton/>}{error&&<ErrorState m={m} retry={()=>retryAction?.()}/>}{data&&(inputsOnly?inputsList:<div className="two-columns">

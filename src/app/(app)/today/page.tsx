@@ -5,6 +5,7 @@ import { getLanguage } from '../../../lib/locale';
 import { loadMessages } from '../../../lib/i18n';
 import { demoPhrase, noteText, personName, statusWord } from '../../../lib/plain';
 import { TaskDone } from '../../../components/task-done';
+import { formatDate } from '../../../lib/format-date';
 
 type Row = { id: string; href: string; title: string; status: string; note: string; action?: React.ReactNode };
 
@@ -12,7 +13,7 @@ export default async function Page() {
   const locale = await getLanguage(), m = loadMessages(locale), s = m.screens, f = m.flow;
   const data = await screenData((db, member) => readToday(db, member), 'today');
   const label = (value: string) => demoPhrase(value, locale);
-  const day = (value: string | null | undefined) => value ? new Intl.DateTimeFormat(`${locale}-u-nu-latn`, { dateStyle: 'medium' }).format(new Date(value)) : '';
+  const day = (value: string | null | undefined) => value ? formatDate(value, locale) : '';
   const run = (id: string) => data.runs.find(item => item.id === id);
   const deal = (id: string, fallback: string) => { const name = run(id)?.deal; return name ? label(name) : fallback; };
   const note = (template: string, value: string | null | undefined) => value ? template.replace('{date}', day(value)) : '';
